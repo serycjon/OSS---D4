@@ -1,6 +1,9 @@
+SRC=./src
+BIN=./bin
+
 all: main
 
-main: main.c
-	gcc main.c -o main
+main: $(SRC)/main.c
+	gcc $(SRC)/main.c -o $(BIN)/main
 
 clean: rm -rf *.o
