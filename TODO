@@ -6,7 +6,7 @@ read parseRouteConfiguration -> write parser into graph-format
 	it already parses info into table...
 	BUT! - it parses it only in one direction... Maybe we should use every link in both directions?!?!?
 		Jonas
-
+	already works in both directions... sent bursam email asking him how are we supposed to deal with it...
 
 implement sample udp client_server
 implement path-finding algorithm (BFS [prohledavani do sirky])
