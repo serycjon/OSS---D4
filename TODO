@@ -1,1 +1,10 @@
 Read http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html
+
+Read http://en.wikipedia.org/wiki/Routing_Information_Protocol
+
+read parseRouteConfiguration -> write parser into graph-format
+implement sample udp client_server
+implement path-finding algorithm (BFS [prohledavani do sirky])
+
+implement RIP
+thread security
