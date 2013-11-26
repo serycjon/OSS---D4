@@ -94,6 +94,9 @@ int parseRouteConfiguration(const char * fileName, int localId, int * localPort,
 						result = 0;
 					}
 					//fprintf(stderr, "CFG_PARSER: [DEBUG] LINK %d -> %d\n", id_client, id_server);
+					//
+					//Here is the code we should change to enable "bidirectional wires"
+					//
 					if (id_client == localId) {
 						int i;
 						for (i=0; i<allConnectionCount; i++) {
@@ -102,6 +105,17 @@ int parseRouteConfiguration(const char * fileName, int localId, int * localPort,
 							}
 						}
 					}
+					if (id_server == localId) {
+						int i;
+						for (i=0; i<allConnectionCount; i++) {
+							if (allConnections[i].id == id_client) {
+								connections[(*connectionCount)++] = allConnections[i];
+							}
+						}
+					}
+					//
+					//End
+					//
 				} else {
 					fprintf(stderr, "CFG_PARSER: [ERROR] invalid configuration line '%s'\n", line);
 					result = 0;
