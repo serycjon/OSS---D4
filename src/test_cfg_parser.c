@@ -8,17 +8,24 @@
 
 #include "route_cfg_parser.h"
 
+#define MAX_NODE_CONNECTIONS 5
 int main(int argc, char ** argv)
 {
 	if (argc < 2) {
 		fprintf(stderr, "Not enough arguments\nUsage: %s <ID> [ <cfg-file-name> ]\n", argv[0]);
 		return -1;
 	}
+	char* pokus = POKUS;
+	printf("%s\n", pokus);
 	int localId = atoi(argv[1]);
 	int connectionCount = 100;
 	int localPort;
 	TConnection connections[connectionCount];
-	int result = parseRouteConfiguration((argc>2)?argv[2]:NULL, localId, &localPort, &connectionCount, connections);
+	int nodes_count = 10;
+	int neighbors_counts[nodes_count];
+	int* topology_table[nodes_count];
+	int result = parseRouteConfiguration((argc>2)?argv[2]:"routing.cfg", localId, &localPort, &connectionCount, connections,
+						&nodes_count, neighbors_counts, topology_table);
 	if (result) {
 		printf("OK, local port: %d\n", localPort);
 

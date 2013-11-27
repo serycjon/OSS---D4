@@ -13,7 +13,7 @@
 #define DEFAULT_CFG_FILE_NAME "routing.cfg"
 #define MAX_LINE_SIZE 255
 
-int parse_word(char ** str, char * result, int maxLength)
+int parseWord(char ** str, char * result, int max_length)
 {
 	int length = 0;
 	char c;
@@ -24,7 +24,7 @@ int parse_word(char ** str, char * result, int maxLength)
 				return 1;
 			}
 		} else {
-			if (length < maxLength-1) {
+			if (length < max_length-1) {
 				result[length++] = c;
 			}
 		}
@@ -34,17 +34,19 @@ int parse_word(char ** str, char * result, int maxLength)
 	return (length > 0);
 }
 
-int parseRouteConfiguration(const char * fileName, int localId, int * localPort, int * connectionCount, TConnection * connections)
+
+int parseRouteConfiguration(char* file_name, int local_id, int* local_port, 
+		int* local_connection_count, 	TConnection* local_connections,
+		int* nodes_count, int* neighbors_counts, int** topology_table)
 {
-	int maxConnections = *connectionCount;
-	*connectionCount = 0;
-	TConnection allConnections[maxConnections];
-	int allConnectionCount = 0;
+	int max_connections = *local_connection_count;
+	*local_connection_count = 0;
+	TConnection all_connections[max_connections];
+	int all_connection_count = 0;
 
 	int result;
-	if (!fileName) fileName = DEFAULT_CFG_FILE_NAME;
-	if (localPort) *localPort = -1;
-	FILE * f = fopen(fileName, "r");
+	if (local_port) *local_port = -1;
+	FILE * f = fopen(file_name, "r");
 	if (f) {
 		result = 1;
 		char line[MAX_LINE_SIZE+1];
@@ -54,39 +56,39 @@ int parseRouteConfiguration(const char * fileName, int localId, int * localPort,
 			char * l = line;
 			const int tmp_size = 20;
 			char tmp[tmp_size];
-			if (parse_word(&l, tmp, tmp_size)) {
+			if (parseWord(&l, tmp, tmp_size)) {
 				if (strcmp(tmp, "node") == 0) {
 					TConnection c;
-					if (parse_word(&l, tmp, tmp_size)) {
+					if (parseWord(&l, tmp, tmp_size)) {
 						c.id = atoi(tmp);
 					} else c.id = 0;
 					if (c.id == 0) {
 						fprintf(stderr, "CFG_PARSER: [ERROR] invalid ID '%s' on line '%s'\n", tmp, line);
 						result = 0;
 					}
-					if (parse_word(&l, tmp, tmp_size)) {
+					if (parseWord(&l, tmp, tmp_size)) {
 						c.port = atoi(tmp);
 					} else c.port = 0;
 					if (c.port == 0) {
 						fprintf(stderr, "CFG_PARSER: [ERROR] invalid port '%s' on line '%s'\n", tmp, line);
 						result = 0;
 					}
-					parse_word(&l, c.ip_address, IP_ADDRESS_MAX_LENGTH);
+					parseWord(&l, c.ip_address, IP_ADDRESS_MAX_LENGTH);
 					//fprintf(stderr, "CFG_PARSER: [DEBUG] ID=%d, port=%d, IP=%s\n", c.id, c.port, c.ip_address);
-					allConnections[allConnectionCount++] = c;
-					if (c.id == localId && localPort != NULL) {
-						*localPort = c.port;
+					all_connections[all_connection_count++] = c;
+					if (c.id == local_id && local_port != NULL) {
+						*local_port = c.port;
 					}
 				} else if (strcmp(tmp, "link") == 0) {
 					int id_client, id_server;
-					if (parse_word(&l, tmp, tmp_size)) {
+					if (parseWord(&l, tmp, tmp_size)) {
 						id_client = atoi(tmp);
 					} else id_client = 0;
 					if (id_client == 0) {
 						fprintf(stderr, "CFG_PARSER: [ERROR] invalid client ID '%s' on line '%s'\n", tmp, line);
 						result = 0;
 					}
-					if (parse_word(&l, tmp, tmp_size)) {
+					if (parseWord(&l, tmp, tmp_size)) {
 						id_server = atoi(tmp);
 					} else id_server = 0;
 					if (id_server == 0) {
@@ -94,28 +96,14 @@ int parseRouteConfiguration(const char * fileName, int localId, int * localPort,
 						result = 0;
 					}
 					//fprintf(stderr, "CFG_PARSER: [DEBUG] LINK %d -> %d\n", id_client, id_server);
-					//
-					//Here is the code we should change to enable "bidirectional wires"
-					//
-					if (id_client == localId) {
+					if (id_client == local_id) {
 						int i;
-						for (i=0; i<allConnectionCount; i++) {
-							if (allConnections[i].id == id_server) {
-								connections[(*connectionCount)++] = allConnections[i];
+						for (i=0; i<all_connection_count; i++) {
+							if (all_connections[i].id == id_server) {
+								local_connections[(*local_connection_count)++] = all_connections[i];
 							}
 						}
 					}
-					if (id_server == localId) {
-						int i;
-						for (i=0; i<allConnectionCount; i++) {
-							if (allConnections[i].id == id_client) {
-								connections[(*connectionCount)++] = allConnections[i];
-							}
-						}
-					}
-					//
-					//End
-					//
 				} else {
 					fprintf(stderr, "CFG_PARSER: [ERROR] invalid configuration line '%s'\n", line);
 					result = 0;
@@ -124,10 +112,10 @@ int parseRouteConfiguration(const char * fileName, int localId, int * localPort,
 		}
 		fclose(f);
 	} else {
-		fprintf(stderr, "CFG_PARSER: [ERROR] can not open file '%s'\n", fileName);
+		fprintf(stderr, "CFG_PARSER: [ERROR] can not open file '%s'\n", file_name);
 		result = 0;
 	}
-	//fprintf(stderr, "CFG_PARSER: [DEBUG] parsed %d nodes and %d own links\n", allConnectionCount, *connectionCount);
+	//fprintf(stderr, "CFG_PARSER: [DEBUG] parsed %d nodes and %d own links\n", all_connection_count, *connection_count);
 	return result;
 }
 
