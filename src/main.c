@@ -31,6 +31,6 @@ int main(int argc, char** argv){
 	}
 
 	// Process the config file
-	load_config_from_file(config_file_name, node_id);
+	loadConfigFromFile(config_file_name, node_id);
 	return 0;
 }
