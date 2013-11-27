@@ -6,10 +6,9 @@
 typedef enum {
 	ONLINE,
 	OFFLINE
-} RouteStatus;
+} NodeStatus;
 
 typedef struct routing_table_entry {
-	RouteStatus status;
 	int next_hop_port;
 	char next_hop_ip[IP_ADDRESS_MAX_LENGTH];
 } RoutingTableEntry;
