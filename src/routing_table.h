@@ -13,6 +13,7 @@ typedef struct routing_table_entry {
 	char next_hop_ip[IP_ADDRESS_MAX_LENGTH];
 } RoutingTableEntry;
 
-int load_config_from_file(char* filename, int local_id);
+int loadConfigFromFile(char* filename, int local_id);
 
+int insertIntoTopologyTable(int from, int to, int** topology_table, int* neighbors_counts, int nodes_count);
 #endif
