@@ -15,8 +15,6 @@ int main(int argc, char ** argv)
 		fprintf(stderr, "Not enough arguments\nUsage: %s <ID> [ <cfg-file-name> ]\n", argv[0]);
 		return -1;
 	}
-	char* pokus = POKUS;
-	printf("%s\n", pokus);
 	int localId = atoi(argv[1]);
 	int connectionCount = 100;
 	int localPort;
@@ -39,7 +37,9 @@ int main(int argc, char ** argv)
 		}
 	} else {
 		printf("ERROR\n");
+		return 1;
 	}
+	return 0;
 }
 
 /* end of test.c */

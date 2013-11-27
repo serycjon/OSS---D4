@@ -104,6 +104,7 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 							}
 						}
 					}
+					/* topology table construciton */
 				} else {
 					fprintf(stderr, "CFG_PARSER: [ERROR] invalid configuration line '%s'\n", line);
 					result = 0;

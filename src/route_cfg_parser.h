@@ -7,8 +7,7 @@
 #define __ROUTE_CFG_PARSER_H__
 
 #include <stdlib.h>
-
-#define IP_ADDRESS_MAX_LENGTH 16
+#include "settings.h"
 
 typedef struct {
 	int id;
