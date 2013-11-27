@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "route_cfg_parser.h"
+#include "routing_table.h"
 
 #define DEFAULT_CFG_FILE_NAME "routing.cfg"
 #define MAX_LINE_SIZE 255
@@ -96,6 +97,8 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 						result = 0;
 					}
 					//fprintf(stderr, "CFG_PARSER: [DEBUG] LINK %d -> %d\n", id_client, id_server);
+
+
 					if (id_client == local_id) {
 						int i;
 						for (i=0; i<all_connection_count; i++) {
@@ -104,7 +107,13 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 							}
 						}
 					}
-					/* topology table construciton */
+					/* topology table construction */
+
+					if(insertIntoTopologyTable(id_client, id_server, topology_table, neighbors_counts, *nodes_count) == 0){
+						result = 0;
+					}
+
+
 				} else {
 					fprintf(stderr, "CFG_PARSER: [ERROR] invalid configuration line '%s'\n", line);
 					result = 0;
