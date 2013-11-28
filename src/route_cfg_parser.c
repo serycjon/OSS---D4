@@ -10,6 +10,7 @@
 
 #include "route_cfg_parser.h"
 #include "routing_table.h"
+#include "settings.h"
 
 #define DEFAULT_CFG_FILE_NAME "routing.cfg"
 #define MAX_LINE_SIZE 255
@@ -22,7 +23,7 @@ int parseWord(char ** str, char * result, int max_length)
 		if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
 			if (length > 0) {
 				result[length] = 0;
-				return 1;
+				return SUCCESS;
 			}
 		} else {
 			if (length < max_length-1) {
@@ -40,6 +41,7 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 		int* local_connection_count, 	TConnection* local_connections,
 		int* nodes_count, int* neighbors_counts, int** topology_table)
 {
+	
 	int max_connections = *local_connection_count;
 	*local_connection_count = 0;
 	TConnection all_connections[max_connections];
@@ -49,7 +51,7 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 	if (local_port) *local_port = -1;
 	FILE * f = fopen(file_name, "r");
 	if (f) {
-		result = 1;
+		result = SUCCESS;
 		char line[MAX_LINE_SIZE+1];
 		while (!feof(f) && fgets(line, MAX_LINE_SIZE, f)) {
 			int len = strlen(line);
@@ -65,20 +67,24 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 					} else c.id = 0;
 					if (c.id == 0) {
 						fprintf(stderr, "CFG_PARSER: [ERROR] invalid ID '%s' on line '%s'\n", tmp, line);
-						result = 0;
+						result = FAILURE;
 					}
 					if (parseWord(&l, tmp, tmp_size)) {
 						c.port = atoi(tmp);
 					} else c.port = 0;
 					if (c.port == 0) {
 						fprintf(stderr, "CFG_PARSER: [ERROR] invalid port '%s' on line '%s'\n", tmp, line);
-						result = 0;
+						result = FAILURE;
 					}
 					parseWord(&l, c.ip_address, IP_ADDRESS_MAX_LENGTH);
 					//fprintf(stderr, "CFG_PARSER: [DEBUG] ID=%d, port=%d, IP=%s\n", c.id, c.port, c.ip_address);
 					all_connections[all_connection_count++] = c;
 					if (c.id == local_id && local_port != NULL) {
 						*local_port = c.port;
+					}
+					if(c.id > MAX_ID || c.id < MIN_ID){
+						fprintf(stderr, "CFG_PARSER: [ERROR] id out of bounds!\n");
+						return FAILURE;
 					}
 				} else if (strcmp(tmp, "link") == 0) {
 					int id_client, id_server;
@@ -87,14 +93,14 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 					} else id_client = 0;
 					if (id_client == 0) {
 						fprintf(stderr, "CFG_PARSER: [ERROR] invalid client ID '%s' on line '%s'\n", tmp, line);
-						result = 0;
+						result = FAILURE;
 					}
 					if (parseWord(&l, tmp, tmp_size)) {
 						id_server = atoi(tmp);
 					} else id_server = 0;
 					if (id_server == 0) {
 						fprintf(stderr, "CFG_PARSER: [ERROR] invalid server ID '%s' on line '%s'\n", tmp, line);
-						result = 0;
+						result = FAILURE;
 					}
 					//fprintf(stderr, "CFG_PARSER: [DEBUG] LINK %d -> %d\n", id_client, id_server);
 
@@ -110,20 +116,20 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 					/* topology table construction */
 
 					if(insertIntoTopologyTable(id_client, id_server, topology_table, neighbors_counts, *nodes_count) == 0){
-						result = 0;
+						result = FAILURE;
 					}
 
 
 				} else {
 					fprintf(stderr, "CFG_PARSER: [ERROR] invalid configuration line '%s'\n", line);
-					result = 0;
+					result = FAILURE;
 				}
 			}
 		}
 		fclose(f);
 	} else {
 		fprintf(stderr, "CFG_PARSER: [ERROR] can not open file '%s'\n", file_name);
-		result = 0;
+		result = FAILURE;
 	}
 	//fprintf(stderr, "CFG_PARSER: [DEBUG] parsed %d nodes and %d own links\n", all_connection_count, *connection_count);
 	return result;
