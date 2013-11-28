@@ -27,7 +27,7 @@ int initRouting(char* filename, int local_id){
 	}
 	
 
-	show_topology(nodes_count, neighbors_counts, topology_table);
+	showTopology(nodes_count, neighbors_counts, topology_table);
 
 	
 
@@ -73,7 +73,7 @@ void showTopology(int nodes_count, int* neighbors_counts, int** topology_table){
 		for(j = 0; j < neighbors_counts[i]; j++){
 			printf("Connection: %d -> %d\n", i, topology_table[i][j]);
 		}
-		// printf("-------\n");
+		printf("-------\n");
 	}
 	printf("--------------------------------\n");
 }
