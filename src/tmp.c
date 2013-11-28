@@ -62,7 +62,3 @@ int** getNeighboursTable(){
 	return neighbours_table;
 }
 
-int** fixNeighboursTable(int offline_node){
-
-
-}
