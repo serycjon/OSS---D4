@@ -15,9 +15,9 @@ We will try to implement something like OSPF
 		link-state advertisement packet
 
 read parseRouteConfiguration -> write parser into graph-format
-	
+	implement returning actual nodes_count
+	try to put topology_table init into parser
 implement sample udp client_server
 implement path-finding algorithm (BFS [prohledavani do sirky])
 
-implement RIP
 thread security
