@@ -50,15 +50,15 @@ int searchNextNode(/*int ** topology_table, int* neighbours_counts, int nodes_co
 	return right_way;
 } 
 
-int** getNeighboursTable(){
-	int** neighbours_table = (int **) malloc(MAX_NODES * sizeof(int *));
+int** getRoutingTable(){
+	int** routing_table = (int **) malloc(MAX_NODES * sizeof(int *));
 	int i, j;
 
 	for(i=0; i<MAX_NODES; i++){
 		for(j=0; j<MAX_NODES; j++){
-//			neighbours_table[i][j] = searchNextNode(i+1, j+1);			
+//			routing_table[i][j] = searchNextNode(i+1, j+1);			
 		}
 	}
-	return neighbours_table;
+	return routing_table;
 }
 
