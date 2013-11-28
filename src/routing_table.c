@@ -64,7 +64,7 @@ int insertIntoTopologyTable(int from, int to, int** topology_table, int* neighbo
 	return SUCCESS;
 }
 
-void show_topology(int nodes_count, int* neighbors_counts, int** topology_table){
+void showTopology(int nodes_count, int* neighbors_counts, int** topology_table){
 	printf("--------------------------------\n"
 		"Network topology:\n"
 		"--------------------------------\n");
