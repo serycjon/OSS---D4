@@ -47,6 +47,9 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 	TConnection all_connections[max_connections];
 	int all_connection_count = 0;
 
+	int max_nodes = *nodes_count;
+	*nodes_count = 0;
+
 	int result;
 	if (local_port) *local_port = -1;
 	FILE * f = fopen(file_name, "r");
@@ -79,6 +82,11 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 					parseWord(&l, c.ip_address, IP_ADDRESS_MAX_LENGTH);
 					//fprintf(stderr, "CFG_PARSER: [DEBUG] ID=%d, port=%d, IP=%s\n", c.id, c.port, c.ip_address);
 					all_connections[all_connection_count++] = c;
+					(*nodes_count)++;
+					if(*nodes_count > max_nodes){
+						fprintf(stderr, "CFG_PARSER: [ERROR] too many nodes!\n");
+						return FAILURE;
+					}
 					if (c.id == local_id && local_port != NULL) {
 						*local_port = c.port;
 					}
