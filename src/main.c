@@ -31,6 +31,6 @@ int main(int argc, char** argv){
 	}
 
 	// Process the config file
-	loadConfigFromFile(config_file_name, node_id);
+	initRouting(config_file_name, node_id);
 	return 0;
 }
