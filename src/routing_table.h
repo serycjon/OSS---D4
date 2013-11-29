@@ -8,11 +8,6 @@ typedef enum {
 	OFFLINE
 } NodeStatus;
 
-typedef struct topology_table{
-	int nodes_count;
-	int* neighbors_counts;
-	int** table;
-} TopologyTable;
 
 typedef struct routing_table_entry {
 	int next_hop_port;
@@ -21,6 +16,4 @@ typedef struct routing_table_entry {
 
 int initRouting(char* filename, int local_id);
 
-int insertIntoTopologyTable(int from, int to, TopologyTable* p_topology);
-void showTopology(TopologyTable topology);
 #endif
