@@ -14,8 +14,12 @@ We will try to implement something like OSPF
 		link-state request packet
 		link-state advertisement packet
 
-read parseRouteConfiguration -> write parser into graph-format
-	try to put topology_table init into parser
+parseRouteConfiguration
+	put TopologyTable init into dedicated function in topology.c
+	check MALLOC success!
+
+routing_table
+
 implement sample udp client_server
 implement path-finding algorithm (BFS [prohledavani do sirky])
 
