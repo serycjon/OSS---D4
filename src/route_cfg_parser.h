@@ -8,6 +8,7 @@
 
 #include <stdlib.h>
 #include "settings.h"
+#include "routing_table.h"
 
 typedef struct {
 	int id;
@@ -35,8 +36,7 @@ typedef struct {
  */
 
 int parseRouteConfiguration(char* file_name, int local_id, int* local_port, 
-		int* local_connection_count, 	TConnection* local_connections,
-		int* nodes_count, int* neighbors_counts, int** topology_table);
+		int* local_connection_count, 	TConnection* local_connections, TopologyTable* p_topology);
 #endif
 
 /* end of route_cfg_parser.h */

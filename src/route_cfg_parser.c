@@ -39,16 +39,28 @@ int parseWord(char ** str, char * result, int max_length)
 
 int parseRouteConfiguration(char* file_name, int local_id, int* local_port, 
 		int* local_connection_count, 	TConnection* local_connections,
-		int* nodes_count, int* neighbors_counts, int** topology_table)
+		TopologyTable* p_topology)
 {
-	
+	p_topology->nodes_count = MAX_NODES;
+	////////////////////// ADD MALLOC CHECK ////////////////////
+	p_topology->neighbors_counts = (int*) malloc(p_topology->nodes_count * sizeof(int));
+	p_topology->table = (int**) malloc(MAX_NODES * sizeof(int*));
+	//init topology table
+	int i;
+	for(i=0; i<MAX_NODES; i++){
+		p_topology->neighbors_counts[i] = 0;
+	}
+	for(i=0; i<MAX_NODES; i++){
+		p_topology->table[i] = (int *) malloc(MAX_CONNECTIONS * sizeof(int));
+	}
+
 	int max_connections = *local_connection_count;
 	*local_connection_count = 0;
 	TConnection all_connections[max_connections];
 	int all_connection_count = 0;
 
-	int max_nodes = *nodes_count;
-	*nodes_count = 0;
+	int max_nodes = MAX_NODES;
+	p_topology->nodes_count = 0;
 
 	int result;
 	if (local_port) *local_port = -1;
@@ -82,8 +94,9 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 					parseWord(&l, c.ip_address, IP_ADDRESS_MAX_LENGTH);
 					//fprintf(stderr, "CFG_PARSER: [DEBUG] ID=%d, port=%d, IP=%s\n", c.id, c.port, c.ip_address);
 					all_connections[all_connection_count++] = c;
-					(*nodes_count)++;
-					if(*nodes_count > max_nodes){
+
+					p_topology->nodes_count++;
+					if(p_topology->nodes_count > max_nodes){
 						fprintf(stderr, "CFG_PARSER: [ERROR] too many nodes!\n");
 						return FAILURE;
 					}
@@ -123,7 +136,7 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 					}
 					/* topology table construction */
 
-					if(insertIntoTopologyTable(id_client, id_server, topology_table, neighbors_counts, *nodes_count) == 0){
+					if(insertIntoTopologyTable(id_client, id_server, p_topology) == 0){
 						result = FAILURE;
 					}
 
