@@ -9,7 +9,7 @@
 #include <string.h>
 
 #include "route_cfg_parser.h"
-#include "routing_table.h"
+#include "topology.h"
 #include "settings.h"
 
 #define DEFAULT_CFG_FILE_NAME "routing.cfg"

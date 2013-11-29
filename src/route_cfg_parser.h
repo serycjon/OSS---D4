@@ -8,7 +8,7 @@
 
 #include <stdlib.h>
 #include "settings.h"
-#include "routing_table.h"
+#include "topology.h"
 
 typedef struct {
 	int id;
