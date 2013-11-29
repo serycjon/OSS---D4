@@ -8,6 +8,12 @@ typedef enum {
 	OFFLINE
 } NodeStatus;
 
+typedef struct topology_table{
+	int nodes_count;
+	int* neighbors_counts;
+	int** table;
+} TopologyTable;
+
 typedef struct routing_table_entry {
 	int next_hop_port;
 	char next_hop_ip[IP_ADDRESS_MAX_LENGTH];
@@ -15,6 +21,6 @@ typedef struct routing_table_entry {
 
 int initRouting(char* filename, int local_id);
 
-int insertIntoTopologyTable(int from, int to, int** topology_table, int* neighbors_counts, int nodes_count);
-void showTopology(int nodes_count, int* neighbors_counts, int** topology_table);
+int insertIntoTopologyTable(int from, int to, TopologyTable* p_topology);
+void showTopology(TopologyTable topology);
 #endif
