@@ -4,10 +4,10 @@
 
 int insertIntoTopologyTable(int from, int to, TopologyTable* p_topology){
 	if(p_topology->neighbors_counts[from] >= MAX_CONNECTIONS){
-		fprintf(stderr, "TOPOLOGY_TABLE CONSTRUCTION ERROR: too much connections at %d!\n", from);
+		fprintf(stderr, "TOPOLOGY_TABLE INSERT: [ERROR] too much connections at %d!\n", from);
 		return FAILURE;
 	}else if(p_topology->neighbors_counts[to] >= MAX_CONNECTIONS){
-		fprintf(stderr, "TOPOLOGY_TABLE CONSTRUCTION ERROR: too much connections at %d!\n", to);
+		fprintf(stderr, "TOPOLOGY_TABLE INSERT: [ERROR] too much connections at %d!\n", to);
 		return FAILURE;
 	}
 	int i;
