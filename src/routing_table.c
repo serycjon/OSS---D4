@@ -45,7 +45,7 @@ RoutingTableEntry** createRoutingTable (TopologyTable* topology, int node_ID, No
 				stack[last++] = new;
 				routing_table[new_node_ID-1] = new_entry;
 			}
-
+	}
 	while (visited_nodes <= topology->nodes_count && visited_nodes<=last){	//untill there are some accesible unattended nodes
 		int actual_node_ID = stack[visited_nodes]->final_node_ID;
 		
