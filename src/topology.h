@@ -2,6 +2,12 @@
 #define TOPOLOGY_GUARD
 
 
+/* WARNING WARNING WARNING
+ * there are INDICES inside the table, not IDs !!!
+ * you have to convert them to IDs with indexToId(int index); from routing_table.h
+ * WARNING WARNING WARNING
+ */
+
 typedef struct topology_table{
 	int nodes_count;
 	int* neighbors_counts;
