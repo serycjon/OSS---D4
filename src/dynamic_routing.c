@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -20,7 +21,8 @@ void *get_in_addr(struct sockaddr *sa)
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int routingListen(int port_number){
+int routingListen(int port_number)
+{
 	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
@@ -88,12 +90,16 @@ int routingListen(int port_number){
 	return 0;
 }
 
-int sayHello(int connection_count, TConnection* connections){
+int sayHello(Connections conns)
+{
 	int i;
 	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
 	int numbytes;
+
+	int connection_count = conns.count;
+	TConnection* connections = conns.array;
 
 
 	for(i=0; i<connection_count; i++){
@@ -136,8 +142,5 @@ int sayHello(int connection_count, TConnection* connections){
 		printf("talker: sent %d bytes to %d\n", numbytes, connections[i].id);
 		close(sockfd);
 	}
+	return 0;
 }
-
-	int main(){
-		return 0;
-	}
