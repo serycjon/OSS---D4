@@ -31,6 +31,7 @@ int initRouting(char* filename, int local_id);
 
 RoutingTable createRoutingTable (TopologyTable topology, Connections connections, int node_ID, NodeStatus* status_table);
 int idToIndex(int id);
+int indexToId(int id);
 void showRoutingTable(RoutingTable routing_table);
 void setAddressById(int id, RoutingTableEntry* entry, Connections connections);
 
