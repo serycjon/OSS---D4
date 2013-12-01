@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include "topology.h"
 #include "settings.h"
+#include "routing_table.h"
 
 int insertIntoTopologyTable(int from, int to, TopologyTable* p_topology){
+	from = idToIndex(from);
+	to = idToIndex(to);
+
 	if(p_topology->neighbors_counts[from] >= MAX_CONNECTIONS){
 		fprintf(stderr, "TOPOLOGY_TABLE INSERT: [ERROR] too much connections at %d!\n", from);
 		return FAILURE;
@@ -37,9 +41,9 @@ void showTopology(TopologyTable topology){
 		"Network topology:\n"
 		"--------------------------------\n");
 	int i, j;
-	for(i = MIN_ID; i < topology.nodes_count; i++){
+	for(i = 0; i < topology.nodes_count; i++){
 		for(j = 0; j < topology.neighbors_counts[i]; j++){
-			printf("Connection: %d -> %d\n", i, topology.table[i][j]);
+			printf("Connection: %d -> %d\n", indexToId(i), indexToId(topology.table[i][j]));
 		}
 		printf("-------\n");
 	}
