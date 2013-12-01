@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
 #include "route_cfg_parser.h"
 #include "routing_table.h"
 #include "topology.h"
@@ -43,7 +44,15 @@ int initRouting(char* filename, int local_id){
 	showRoutingTable(routing_table);
 
 	sayHello(local_connections);
-	routingListen(local_port);
+
+	pthread_t listen_thread;
+	pthread_create(&listen_thread, NULL, (void*) &routingListen, (void*) &local_port);
+	char c;
+	while((c=getchar()) != EOF){
+		sayHello(local_connections);
+		//printf("still listening\n");
+	}
+	// routingListen(local_port);
 
 	return SUCCESS;
 }
