@@ -21,8 +21,10 @@ void *get_in_addr(struct sockaddr *sa)
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int routingListen(int port_number)
+int routingListen(void* port_number_ptr)
 {
+	int port_number = *( (int*)port_number_ptr);
+	printf("port: %d\n", port_number);
 	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
@@ -72,18 +74,21 @@ int routingListen(int port_number)
 	printf("listener: waiting to recvfrom...\n");
 
 	addr_len = sizeof their_addr;
-	if ((numbytes = recvfrom(sockfd, buf, MAXBUFLEN-1 , 0,
-					(struct sockaddr *)&their_addr, &addr_len)) == -1) {
-		perror("recvfrom");
-		exit(1);
-	}
+	for(;;){
+		if ((numbytes = recvfrom(sockfd, buf, MAXBUFLEN-1 , 0,
+						(struct sockaddr *)&their_addr, &addr_len)) == -1) {
+			perror("recvfrom");
+			exit(1);
+		}
 
-	printf("listener: got packet from %s\n",
-			inet_ntop(their_addr.ss_family,
-				get_in_addr((struct sockaddr *)&their_addr), s, sizeof s));
-	printf("listener: packet is %d bytes long\n", numbytes);
-	buf[numbytes] = '\0';
-	printf("listener: packet contains \"%s\"\n", buf);
+		printf("inside loop\n");
+		printf("listener: got packet from %s\n",
+				inet_ntop(their_addr.ss_family,
+					get_in_addr((struct sockaddr *)&their_addr), s, sizeof s));
+		printf("listener: packet is %d bytes long\n", numbytes);
+		buf[numbytes] = '\0';
+		printf("listener: packet contains \"%s\"\n", buf);
+	}
 
 	close(sockfd);
 
