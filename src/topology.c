@@ -37,9 +37,9 @@ int insertIntoTopologyTable(int from, int to, TopologyTable* p_topology){
 }
 
 void showTopology(TopologyTable topology){
-	printf("--------------------------------\n"
+	printf("-----------\n"
 		"Network topology:\n"
-		"--------------------------------\n");
+		"-----------\n");
 	int i, j;
 	for(i = 0; i < topology.nodes_count; i++){
 		for(j = 0; j < topology.neighbors_counts[i]; j++){
@@ -47,5 +47,5 @@ void showTopology(TopologyTable topology){
 		}
 		printf("-------\n");
 	}
-	printf("--------------------------------\n");
+	printf("-----------\n\n");
 }
