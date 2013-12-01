@@ -6,8 +6,8 @@
 #define DEFAULT_CONFIG_FILENAME "routing.cfg"
 #define MIN_ID 1
 #define MAX_ID 255
-#define MAX_NODES 255
-#define MAX_LINKS 10000
+#define MAX_NODES (MAX_ID - MIN_ID)
+#define MAX_LINKS 1000
 #define MAX_CONNECTIONS 5
 
 #define IP_ADDRESS_MAX_LENGTH 16
