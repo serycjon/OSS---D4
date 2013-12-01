@@ -2,7 +2,8 @@
 Jakub Kulhan's implementation of our task: https://github.com/jakubkulhan/d4node
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-Read http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html
+networking tutorial - http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html
+pthreads tutorial   - https://computing.llnl.gov/tutorials/pthreads/#CreatingThreads
 
 We will try to implement something like OSPF
 	http://youtu.be/iSCzRsGntEU
@@ -18,9 +19,6 @@ parseRouteConfiguration
 	put TopologyTable init into dedicated function in topology.c
 
 routing_table
-
-implement sample udp client_server
-implement path-finding algorithm (BFS [prohledavani do sirky])
 
 thread security
 
