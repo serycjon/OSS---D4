@@ -29,13 +29,14 @@ int initRouting(char* filename, int local_id){
 	showTopology(topology);
 	#endif
 	// Dummy status_table
-	NodeStatus status_table[MAX_NODES];
+	NodeStatus status_table[topology.nodes_count];
 	int i;
-	for(i = 0; i < MAX_NODES; i++){
+	for(i = 0; i < topology.nodes_count; i++){
 		status_table[i] = ONLINE;
 	}
 	status_table[idToIndex(2)] = OFFLINE;
 	status_table[idToIndex(3)] = OFFLINE;
+	showStatusTable(topology.nodes_count, status_table);
 
 	RoutingTable routing_table = createRoutingTable(topology, bidir_connections, local_id, status_table);
 	showRoutingTable(routing_table);
@@ -136,7 +137,7 @@ void showRoutingTable(RoutingTable routing_table)
 					routing_table.table[i].next_hop_id, routing_table.table[i].next_hop_ip, routing_table.table[i].next_hop_port);
 		}
 	}
-	printf("---------------\n");
+	printf("---------------\n\n");
 }
 
 void setAddressById(int id, RoutingTableEntry* entry, Connections connections)
@@ -163,4 +164,20 @@ void setAddressById(int id, RoutingTableEntry* entry, Connections connections)
 		entry->next_hop_port = -1;
 		strcpy(entry->next_hop_ip, "127.0.0.1");
 	}
+}
+
+void showStatusTable(int status_table_size, NodeStatus* status_table)
+{
+	printf("-----------\n");
+	printf("State table: \n");
+	printf("-----------\n");
+	int i;
+	for(i=0; i<status_table_size; i++){
+		if(status_table[i] == ONLINE){
+			printf("node %d is ONLINE\n", indexToId(i));
+		}else{
+			printf("node %d is OFFLINE\n", indexToId(i));
+		}
+	}
+	printf("-----------\n\n");
 }

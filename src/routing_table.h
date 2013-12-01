@@ -34,5 +34,6 @@ int idToIndex(int id);
 int indexToId(int id);
 void showRoutingTable(RoutingTable routing_table);
 void setAddressById(int id, RoutingTableEntry* entry, Connections connections);
+void showStatusTable(int status_table_size, NodeStatus* state_table);
 
 #endif
