@@ -36,31 +36,40 @@ int parseWord(char ** str, char * result, int max_length)
 	return (length > 0);
 }
 
+void mallocCheck(void* pointer){
+	if(pointer == NULL){
+		printf("fatal error... malloc failed\n");
+	}
+}
 
 int parseRouteConfiguration(char* file_name, int local_id, int* local_port, 
-		int* local_connection_count, 	TConnection* local_connections,
-		TopologyTable* p_topology)
+		pConnections p_bidir_connections, pConnections p_local_connections, TopologyTable* p_topology)
 {
+	int all_connections_count = 0;
+	TConnection all_connections[MAX_LINKS];
+
+
 	p_topology->nodes_count = MAX_NODES;
-	////////////////////// ADD MALLOC CHECK ////////////////////
-	p_topology->neighbors_counts = (int*) malloc(p_topology->nodes_count * sizeof(int));
-	p_topology->table = (int**) malloc(MAX_NODES * sizeof(int*));
+	mallocCheck(p_topology->neighbors_counts = (int*) malloc(MAX_NODES * sizeof(int)));
+	mallocCheck(p_topology->table = (int**) malloc(MAX_NODES * sizeof(int*)));
+	p_topology->nodes_count = 0;
+
 	//init topology table
 	int i;
 	for(i=0; i<MAX_NODES; i++){
 		p_topology->neighbors_counts[i] = 0;
 	}
 	for(i=0; i<MAX_NODES; i++){
-		p_topology->table[i] = (int *) malloc(MAX_CONNECTIONS * sizeof(int));
+		mallocCheck(p_topology->table[i] = (int *) malloc(MAX_CONNECTIONS * sizeof(int)));
 	}
 
-	int max_connections = *local_connection_count;
+	int* local_connection_count = &(p_local_connections->count);
+	TConnection* local_connections = (p_local_connections->array);
 	*local_connection_count = 0;
-	TConnection all_connections[max_connections];
-	int all_connection_count = 0;
 
-	int max_nodes = MAX_NODES;
-	p_topology->nodes_count = 0;
+	int* bidir_connection_count = &(p_bidir_connections->count);
+	TConnection* bidir_connections = (p_bidir_connections->array);
+	*bidir_connection_count = 0;
 
 	int result;
 	if (local_port) *local_port = -1;
@@ -92,11 +101,14 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 						result = FAILURE;
 					}
 					parseWord(&l, c.ip_address, IP_ADDRESS_MAX_LENGTH);
+					if(strcmp(c.ip_address, "") == 0 || c.ip_address == NULL){
+						strcpy(c.ip_address, "127.0.0.1");
+					}
 					//fprintf(stderr, "CFG_PARSER: [DEBUG] ID=%d, port=%d, IP=%s\n", c.id, c.port, c.ip_address);
-					all_connections[all_connection_count++] = c;
+					all_connections[all_connections_count++] = c;
 
 					p_topology->nodes_count++;
-					if(p_topology->nodes_count > max_nodes){
+					if(p_topology->nodes_count > MAX_NODES){
 						fprintf(stderr, "CFG_PARSER: [ERROR] too many nodes!\n");
 						return FAILURE;
 					}
@@ -128,9 +140,18 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 
 					if (id_client == local_id) {
 						int i;
-						for (i=0; i<all_connection_count; i++) {
+						for (i=0; i<all_connections_count; i++) {
 							if (all_connections[i].id == id_server) {
 								local_connections[(*local_connection_count)++] = all_connections[i];
+								bidir_connections[(*bidir_connection_count)++] = all_connections[i];
+							}
+						}
+					}
+					if (id_server == local_id) {
+						int i;
+						for (i=0; i<all_connections_count; i++) {
+							if (all_connections[i].id == id_client) {
+								bidir_connections[(*bidir_connection_count)++] = all_connections[i];
 							}
 						}
 					}
@@ -147,13 +168,26 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 				}
 			}
 		}
+		
+		// printf("bidir:\n");
+		// showConnections(*p_bidir_connections);
+		// printf("local:\n");
+		// showConnections(*p_local_connections);
 		fclose(f);
 	} else {
 		fprintf(stderr, "CFG_PARSER: [ERROR] can not open file '%s'\n", file_name);
 		result = FAILURE;
 	}
-	//fprintf(stderr, "CFG_PARSER: [DEBUG] parsed %d nodes and %d own links\n", all_connection_count, *connection_count);
+	//fprintf(stderr, "CFG_PARSER: [DEBUG] parsed %d nodes and %d own links\n", p_all_connections->count, *connection_count);
 	return result;
 }
 
-/* end of route_cfg_parser.c */
+void showConnections(Connections conns){
+	printf("Connections: \n");
+	int i;
+	for(i=0; i<conns.count; i++){
+		printf("connection to id: %d, on port %d and ip %s\n",
+				conns.array[i].id,conns.array[i].port, conns.array[i].ip_address);
+	}
+	printf("-----------\n");
+}
