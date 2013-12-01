@@ -5,8 +5,8 @@ BIN=./bin
 
 all: main
 
-main: $(SRC)/main.c $(SRC)/routing_table.c $(SRC)/topology.c $(SRC)/route_cfg_parser.c
-	gcc $(GCC_OPTIONS) $(SRC)/main.c $(SRC)/routing_table.c $(SRC)/topology.c $(SRC)/route_cfg_parser.c -o $(BIN)/main
+main: $(SRC)/main.c $(SRC)/routing_table.c $(SRC)/topology.c $(SRC)/route_cfg_parser.c $(SRC)/dynamic_routing.c
+	gcc $(GCC_OPTIONS) $(SRC)/main.c $(SRC)/routing_table.c $(SRC)/topology.c $(SRC)/dynamic_routing.c $(SRC)/route_cfg_parser.c -o $(BIN)/main
 
 sample_udp: $(SRC)/samples/sample_udp_server.c $(SRC)/samples/sample_udp_client.c
 	gcc $(GCC_OPTIONS) $(SRC)/samples/sample_udp_server.c -o $(BIN)/server
