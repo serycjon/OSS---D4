@@ -4,6 +4,7 @@
 #include "routing_table.h"
 #include "topology.h"
 #include "settings.h"
+#include "dynamic_routing.h"
 
 int initRouting(char* filename, int local_id){
 	int local_port;
@@ -35,11 +36,14 @@ int initRouting(char* filename, int local_id){
 		status_table[i] = ONLINE;
 	}
 	status_table[idToIndex(2)] = OFFLINE;
-	status_table[idToIndex(3)] = OFFLINE;
+	// status_table[idToIndex(3)] = OFFLINE;
 	showStatusTable(topology.nodes_count, status_table);
 
 	RoutingTable routing_table = createRoutingTable(topology, bidir_connections, local_id, status_table);
 	showRoutingTable(routing_table);
+
+	sayHello(local_connections);
+	routingListen(local_port);
 
 	return SUCCESS;
 }
