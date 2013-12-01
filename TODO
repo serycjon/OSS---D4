@@ -16,7 +16,6 @@ We will try to implement something like OSPF
 
 parseRouteConfiguration
 	put TopologyTable init into dedicated function in topology.c
-	check MALLOC success!
 
 routing_table
 
@@ -24,3 +23,6 @@ implement sample udp client_server
 implement path-finding algorithm (BFS [prohledavani do sirky])
 
 thread security
+
+makefile
+	warning: compiling with -g

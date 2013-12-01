@@ -1,4 +1,4 @@
-GCC_OPTIONS=-Wall
+GCC_OPTIONS=-Wall -g
 
 SRC=./src
 BIN=./bin
