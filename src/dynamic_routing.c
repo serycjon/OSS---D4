@@ -88,7 +88,9 @@ int routingListen(void* port_number_ptr)
 		printf("listener: packet is %d bytes long\n", numbytes);
 		buf[numbytes] = '\0';
 		printf("listener: packet contains \"%s\"\n", buf);
-		sendto(sockfd,buf,MAXBUFLEN-1,0,(struct sockaddr *)&their_addr,sizeof(their_addr));
+		if(sendto(sockfd,buf,MAXBUFLEN-1,0,(struct sockaddr *)&their_addr,addr_len) == -1){
+			perror("odpoved");
+		}
 
 	}
 
