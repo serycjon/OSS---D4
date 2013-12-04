@@ -4,6 +4,8 @@
 #include "routing_table.h"
 #include "settings.h"
 
+void startInterface();
+
 void print_usage(char* file_name){
 	printf("Usage: %s <id> [ <config_file> ]\n", file_name);
 	printf("Description: .............blablabla\n"
@@ -34,5 +36,25 @@ int main(int argc, char** argv){
 	struct shared_mem mem;
 	// Process the config file
 	initRouting(config_file_name, node_id, &mem);
+	startInterface();
 	return 0;
+}
+
+void startInterface()
+{
+	int id;
+	char buffer[250];
+	char msg[250];
+	
+	while(fgets(buffer, 250, stdin)){
+	//	scanf("%d %s", &id, buffer)){
+		//printf("%d %s\n", id, buffer);
+		if(sscanf(buffer, "%d %s", &id, msg) == 2){
+			printf("dest_id: %d; msg: %s\n", id, msg);
+		}else{
+			printf("[ERROR] wrong format!\n"
+					"please enter the destination ID and then your message.\n");
+			//printf("You have entered: %s\n", buffer);
+		}
+	}
 }
