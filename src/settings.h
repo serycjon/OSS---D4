@@ -9,8 +9,9 @@
 #define MAX_NODES (MAX_ID - MIN_ID)
 #define MAX_LINKS 1000
 #define MAX_CONNECTIONS 5
+#define HELLO_TIMER 3
 
-#define BUF_SIZE 128
+#define BUF_SIZE 200
 
 #define IP_ADDRESS_MAX_LENGTH 16
 #endif
