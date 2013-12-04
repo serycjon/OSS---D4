@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "main.h"
 #include "routing_table.h"
 #include "settings.h"
 
@@ -30,7 +31,8 @@ int main(int argc, char** argv){
 		return 1;
 	}
 
+	struct shared_mem mem;
 	// Process the config file
-	initRouting(config_file_name, node_id);
+	initRouting(config_file_name, node_id, &mem);
 	return 0;
 }
