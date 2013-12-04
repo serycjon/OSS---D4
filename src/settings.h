@@ -10,5 +10,7 @@
 #define MAX_LINKS 1000
 #define MAX_CONNECTIONS 5
 
+#define BUF_SIZE 128
+
 #define IP_ADDRESS_MAX_LENGTH 16
 #endif
