@@ -60,25 +60,10 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 	pthread_t listen_thread;
 	pthread_create(&listen_thread, NULL, (void*) &inInit, (void*) p_mem);
 
-	helloSender(p_mem);
+	pthread_t hello_sender;
+	pthread_create(&hello_sender, NULL, (void*) &helloSender, (void*) p_mem);
 
-	for(i=0; i<topology.nodes_count; i++){
-		if(real_conn_array[i].type == OUT_CONN){
-			printf("MAM OUT!!!\n");
-		}
-	}
 
-	sleep(50);
-	//sayHello(local_connections);
-
-	//pthread_t listen_thread;
-	//pthread_create(&listen_thread, NULL, (void*) &routingListen, (void*) &local_port);
-	//char c;
-	/*while((c=getchar()) != EOF){
-		sayHello(local_connections);
-		//printf("still listening\n");
-	}*/
-	// routingListen(local_port);
 	return SUCCESS;
 }
 
