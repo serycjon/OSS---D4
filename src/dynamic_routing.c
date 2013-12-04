@@ -225,13 +225,14 @@ void outInit(struct shared_mem *mem, Connections out_conns)
 		pthread_create(&listen_thread, NULL, (void*) &sockListener, (void*) param);
 
 		sendto(sfd, "Ahojky!", strlen("Ahojky!")+1, 0, 0, 0);
-		/*
-		   struct real_connection *rc = mem->p_connections[out_conns.array[i].id];
-		   rc->type = OUT_CONN; // OUT connection
-		   rc->id = out_conns.array[i].id;
-		   rc->last_seen = clock();
-		   rc->online = 0;
-		   */
+
+		printf("debug: %d\n", out_conns.array[i].id);
+		printf("dalsi: %d\n", mem->p_routing_table->table[4].next_hop_id);
+		struct real_connection *rc = &(mem->p_connections[out_conns.array[i].id]);
+		rc->type = OUT_CONN; // OUT connection
+		rc->id = out_conns.array[i].id;
+		rc->last_seen = clock();
+		rc->online = 0;
 
 
 
