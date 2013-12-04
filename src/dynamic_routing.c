@@ -248,8 +248,8 @@ void helloSender(void *param)
 {
 	struct shared_mem mem = *((struct shared_mem*) param);
 	struct real_connection *conns = mem.p_connections;
-	char *msg = formHelloPacket(mem.local_id);
-	int len = strlen(msg);
+	int len;
+	char *msg = formHelloPacket(mem.local_id, &len);
 
 	int i;
 	for(;;){
