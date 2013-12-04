@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <pthread.h>
 #include "route_cfg_parser.h"
@@ -7,7 +8,8 @@
 #include "settings.h"
 #include "dynamic_routing.h"
 
-int initRouting(char* filename, int local_id){
+int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
+{
 	int local_port;
 	TopologyTable topology;
 
@@ -43,17 +45,18 @@ int initRouting(char* filename, int local_id){
 	RoutingTable routing_table = createRoutingTable(topology, bidir_connections, local_id, status_table);
 	showRoutingTable(routing_table);
 
-	sayHello(local_connections);
+	outInit(p_mem, local_connections);
+	sleep(50);
+	//sayHello(local_connections);
 
-	pthread_t listen_thread;
-	pthread_create(&listen_thread, NULL, (void*) &routingListen, (void*) &local_port);
-	char c;
-	while((c=getchar()) != EOF){
+	//pthread_t listen_thread;
+	//pthread_create(&listen_thread, NULL, (void*) &routingListen, (void*) &local_port);
+	//char c;
+	/*while((c=getchar()) != EOF){
 		sayHello(local_connections);
 		//printf("still listening\n");
-	}
+	}*/
 	// routingListen(local_port);
-
 	return SUCCESS;
 }
 
