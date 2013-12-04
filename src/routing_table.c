@@ -7,6 +7,7 @@
 #include "topology.h"
 #include "settings.h"
 #include "dynamic_routing.h"
+#include "main.h"
 
 int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 {
@@ -45,7 +46,21 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 	RoutingTable routing_table = createRoutingTable(topology, bidir_connections, local_id, status_table);
 	showRoutingTable(routing_table);
 
+	//shared mem filling
+
+	struct real_connection *real_conn_array = (struct real_connection*) malloc(MAX_NODES * sizeof(struct real_connection));
+	p_mem->p_connections = real_conn_array;
+	p_mem->p_topology = &topology;
+	p_mem->p_routing_table = &routing_table;
+	p_mem->p_status_table =(NodeStatus **) &status_table;
 	outInit(p_mem, local_connections);
+
+	for(i=0; i<topology.nodes_count; i++){
+		if(real_conn_array[i].type == OUT_CONN){
+			printf("MAM OUT!!!\n");
+		}
+	}
+
 	sleep(50);
 	//sayHello(local_connections);
 
