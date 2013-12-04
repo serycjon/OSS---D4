@@ -39,7 +39,7 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 	for(i = 0; i < topology.nodes_count; i++){
 		status_table[i] = ONLINE;
 	}
-	status_table[idToIndex(2)] = OFFLINE;
+	//status_table[idToIndex(2)] = OFFLINE;
 	// status_table[idToIndex(3)] = OFFLINE;
 	showStatusTable(topology.nodes_count, status_table);
 
@@ -49,11 +49,18 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 	//shared mem filling
 
 	struct real_connection *real_conn_array = (struct real_connection*) malloc(MAX_NODES * sizeof(struct real_connection));
+	p_mem->local_id = local_id;
+	p_mem->local_port = local_port;
 	p_mem->p_connections = real_conn_array;
 	p_mem->p_topology = &topology;
 	p_mem->p_routing_table = &routing_table;
 	p_mem->p_status_table =(NodeStatus **) &status_table;
 	outInit(p_mem, local_connections);
+
+	pthread_t listen_thread;
+	pthread_create(&listen_thread, NULL, (void*) &inInit, (void*) p_mem);
+
+	helloSender(p_mem);
 
 	for(i=0; i<topology.nodes_count; i++){
 		if(real_conn_array[i].type == OUT_CONN){
