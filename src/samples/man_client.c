@@ -5,8 +5,27 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <pthread.h>
 
 #define BUF_SIZE 500
+
+void pokus(void* p_sfd){
+	int sfd = *( (int*) p_sfd);
+	ssize_t nread;
+	char buf[BUF_SIZE];
+	for(;;){
+
+		nread = recvfrom(sfd, buf, BUF_SIZE, 0, 0, 0);
+		//nread = read(sfd, buf, BUF_SIZE);
+		if (nread == -1) {
+			perror("read");
+			exit(EXIT_FAILURE);
+		}
+
+		printf("Received %ld bytes: %s\n", (long) nread, buf);
+	}
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -63,28 +82,32 @@ int main(int argc, char *argv[])
 	/* Send remaining command-line arguments as separate
 	   datagrams, and read responses from server */
 
+	pthread_t listen_thread;
+	pthread_create(&listen_thread, NULL, (void*) &pokus, (void*) &sfd);
+
 	for (j = 3; j < argc; j++) {
-		len = strlen(argv[j]) + 1;
-		/* +1 for terminating null byte */
+		while(1){
+			len = strlen(argv[j]) + 1;
+			/* +1 for terminating null byte */
 
-		if (len + 1 > BUF_SIZE) {
-			fprintf(stderr, "Ignoring long message in argument %d\n", j);
-			continue;
+			if (len + 1 > BUF_SIZE) {
+				fprintf(stderr, "Ignoring long message in argument %d\n", j);
+				continue;
+			}
+
+			if(sendto(sfd, argv[j], len, 0, 0, 0) != len){
+				//if (write(sfd, argv[j], len) != len) {
+				fprintf(stderr, "partial/failed write\n");
+				exit(EXIT_FAILURE);
+			} 
+			sleep(1);
+			}
 		}
 
-		if (write(sfd, argv[j], len) != len) {
-			fprintf(stderr, "partial/failed write\n");
-			exit(EXIT_FAILURE);
-		}
+		printf("exiting in 10 sec...\n");
+		sleep(10);
+		printf("bye!");
 
-		nread = read(sfd, buf, BUF_SIZE);
-		if (nread == -1) {
-			perror("read");
-			exit(EXIT_FAILURE);
-		}
-
-		printf("Received %ld bytes: %s\n", (long) nread, buf);
+		//exit(EXIT_SUCCESS);
 	}
 
-	exit(EXIT_SUCCESS);
-}

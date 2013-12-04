@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-#define BUF_SIZE 500
+#define BUF_SIZE 5
 
 int main(int argc, char *argv[])
 {
@@ -86,5 +86,6 @@ int main(int argc, char *argv[])
 					(struct sockaddr *) &peer_addr,
 					peer_addr_len) != nread)
 			fprintf(stderr, "Error sending response\n");
+		//sleep(5);
 	}
 }
