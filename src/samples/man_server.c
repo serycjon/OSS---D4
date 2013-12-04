@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-#define BUF_SIZE 5
+#define BUF_SIZE 128
 
 int main(int argc, char *argv[])
 {
@@ -82,6 +82,7 @@ int main(int argc, char *argv[])
 		else
 			fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
 
+		// sleep(2);
 		if (sendto(sfd, buf, nread, 0,
 					(struct sockaddr *) &peer_addr,
 					peer_addr_len) != nread)
