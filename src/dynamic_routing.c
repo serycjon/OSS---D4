@@ -12,6 +12,7 @@
 #include "route_cfg_parser.h"
 #include "dynamic_routing.h"
 #include "main.h"
+#include "packets.h"
 
 #define MAXBUFLEN 100
 
@@ -24,9 +25,18 @@ void *get_in_addr(struct sockaddr *sa)
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int routingListen(void* port_number_ptr)
+void *get_in_port(struct sockaddr *sa)
 {
-	int port_number = *( (int*)port_number_ptr);
+	if (sa->sa_family == AF_INET) {
+		return &(((struct sockaddr_in*)sa)->sin_port);
+	}
+
+	return &(((struct sockaddr_in6*)sa)->sin6_port);
+}
+
+int inInit(void* mem)
+{
+	int port_number = ((struct shared_mem*)mem) ->local_port;
 	printf("port: %d\n", port_number);
 	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
@@ -78,81 +88,38 @@ int routingListen(void* port_number_ptr)
 
 	addr_len = sizeof their_addr;
 	for(;;){
-		if ((numbytes = recvfrom(sockfd, buf, MAXBUFLEN-1 , 0,
-						(struct sockaddr *)&their_addr, &addr_len)) == -1) {
+		if ((numbytes = recvfrom(sockfd, buf, BUF_SIZE , 0, (struct sockaddr *)&their_addr, &addr_len)) == -1) {
 			perror("recvfrom");
-			exit(1);
+			continue;
 		}
+		int port;//  = ntohs(their_addr.sin_port);
+		port = ntohs( *(unsigned short *)get_in_port((struct sockaddr *)&their_addr));
 
-		printf("listener: got packet from %s\n",
+		printf("listener: got packet from %s:%d\n",
 				inet_ntop(their_addr.ss_family,
-					get_in_addr((struct sockaddr *)&their_addr), s, sizeof s));
-		printf("listener: packet is %d bytes long\n", numbytes);
-		buf[numbytes] = '\0';
-		printf("listener: packet contains \"%s\"\n", buf);
-		if(sendto(sockfd,buf,MAXBUFLEN-1,0,(struct sockaddr *)&their_addr,sizeof(their_addr)) < 0){
-			perror("odpoved");
-		}
+					get_in_addr((struct sockaddr *)&their_addr), s, sizeof s), port);
+		// printf("listener: packet is %d bytes long\n", numbytes);
+		// buf[numbytes] = '\0';
+		// printf("listener: packet contains \"%s\"\n", buf);
+
+		char *buf_cpy = (char *) malloc(BUF_SIZE * sizeof(char));
+		memcpy(buf_cpy, &buf, numbytes*sizeof(char));
+		struct mem_and_buffer param;
+		param.buf = buf_cpy;
+		param.len = numbytes;
+		param.mem = (struct shared_mem *) mem;
+		
+		pthread_t parse_thread;
+		pthread_create(&parse_thread, NULL, (void*) &packetParser, (void*) &param); 
+
+		// if(sendto(sockfd,buf,strlen(buf),0,(struct sockaddr *)&their_addr,sizeof(their_addr)) < 0){
+		// 	perror("odpoved");
+		// }
 
 	}
 
 	close(sockfd);
 
-	return 0;
-}
-
-int sayHello(Connections conns)
-{
-	int i;
-	int sockfd;
-	struct addrinfo hints, *servinfo, *p;
-	int rv;
-	int numbytes;
-
-	int connection_count = conns.count;
-	TConnection* connections = conns.array;
-
-
-	for(i=0; i<connection_count; i++){
-		memset(&hints, 0, sizeof hints);
-		hints.ai_family = AF_UNSPEC;
-		hints.ai_socktype = SOCK_DGRAM;
-
-		char port[7];
-		sprintf(port, "%d", connections[i].port);
-
-		if ((rv = getaddrinfo(connections[i].ip_address, port, &hints, &servinfo)) != 0) {
-			fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-			return 1;
-		}
-
-		// loop through all the results and make a socket
-		for(p = servinfo; p != NULL; p = p->ai_next) {
-			if ((sockfd = socket(p->ai_family, p->ai_socktype,
-							p->ai_protocol)) == -1) {
-				perror("talker: socket");
-				continue;
-			}
-
-			break;
-		}
-
-		if (p == NULL) {
-			fprintf(stderr, "talker: failed to bind socket\n");
-			return 2;
-		}
-
-		if ((numbytes = sendto(sockfd, "Hello there!", strlen("Hello there!"), 0,
-						p->ai_addr, p->ai_addrlen)) == -1) {
-			perror("talker: sendto");
-			exit(1);
-		}
-
-		freeaddrinfo(servinfo);
-
-		printf("talker: sent %d bytes to %d\n", numbytes, connections[i].id);
-		close(sockfd);
-	}
 	return 0;
 }
 
@@ -210,6 +177,8 @@ void outInit(struct shared_mem *mem, Connections out_conns)
 			continue;
 		}
 
+		printf("connection succesfull");
+
 		freeaddrinfo(result);           /* No longer needed */
 
 		/* Send remaining command-line arguments as separate
@@ -224,13 +193,14 @@ void outInit(struct shared_mem *mem, Connections out_conns)
 		pthread_t listen_thread;
 		pthread_create(&listen_thread, NULL, (void*) &sockListener, (void*) param);
 
-		sendto(sfd, "Ahojky!", strlen("Ahojky!")+1, 0, 0, 0);
+		//sendto(sfd, "Ahojky!", strlen("Ahojky!")+1, 0, 0, 0);
 
-		printf("debug: %d\n", out_conns.array[i].id);
-		printf("dalsi: %d\n", mem->p_routing_table->table[4].next_hop_id);
+		// printf("debug: %d\n", out_conns.array[i].id);
+		// printf("dalsi: %d\n", mem->p_routing_table->table[4].next_hop_id);
 		struct real_connection *rc = &(mem->p_connections[out_conns.array[i].id]);
 		rc->type = OUT_CONN; // OUT connection
 		rc->id = out_conns.array[i].id;
+		rc->sockfd = sfd;
 		rc->last_seen = clock();
 		rc->online = 0;
 
@@ -253,8 +223,11 @@ void sockListener(void *param)
 	for (;;) {
 		nread = recvfrom(sfd, buf, BUF_SIZE, 0,
 				(struct sockaddr *) &peer_addr, &peer_addr_len);
-		if (nread == -1)
+		if (nread == -1){
+			//printf("request failed\n");
+			//perror("recv:");
 			continue;               /* Ignore failed request */
+		}
 
 		char host[NI_MAXHOST], service[NI_MAXSERV];
 
@@ -268,14 +241,28 @@ void sockListener(void *param)
 		}else{
 			fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
 		}
-
-		/*
-		 * if (sendto(sfd, buf, nread, 0,
-		 (struct sockaddr *) &peer_addr,
-		 peer_addr_len) != nread)
-		 fprintf(stderr, "Error sending response\n");
-		 */
-		//sleep(5);
 	}
 }
+
+void helloSender(void *param)
+{
+	struct shared_mem mem = *((struct shared_mem*) param);
+	struct real_connection *conns = mem.p_connections;
+	char *msg = formHelloPacket(mem.local_id);
+	int len = strlen(msg);
+
+	int i;
+	for(;;){
+		for(i=0; i<MAX_NODES; i++){
+			if(conns[i].id >= MIN_ID){
+				//printf("Helloer ID:%d\n", conns[i].id);
+				if(conns[i].type == OUT_CONN){
+					sendto(conns[i].sockfd, msg, len, 0, 0, 0);
+				}
+			}
+		}
+		sleep(HELLO_TIMER);
+	}
+}
+
 
