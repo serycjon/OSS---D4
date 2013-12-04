@@ -8,6 +8,7 @@
 #define T_DD 3
 
 char *formHelloPacket(int id, int *len);
+char *formMsgPacket(int source_id, int dest_id, char* text, int *len);
 void packetParser(void *parameter);
 
 void parseMsg(struct mem_and_buffer *params);

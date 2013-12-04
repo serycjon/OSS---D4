@@ -14,6 +14,18 @@ char *formHelloPacket(int id, int *len)
 	return msg;
 }
 
+char *formMsgPacket(int source_id, int dest_id, char* text, int *len)
+{
+	char *msg = (char *) malloc(BUF_SIZE*sizeof(char));
+	msg[0] = T_MSG;
+	msg[1] = (u_char) dest_id;
+	msg[2] = (u_char) source_id;
+	strcpy(msg+3, text);
+	// sprintf(msg+1, "Hi from %d!", id);
+	*len = 3*sizeof(char) + strlen(text); //strlen(msg+1)+sizeof(char);
+	return msg;
+}
+
 void packetParser(void *parameter)
 {
 	struct mem_and_buffer *params = (struct mem_and_buffer *) parameter;
@@ -37,8 +49,6 @@ void packetParser(void *parameter)
 		default:
 			printf("INVALID TYPE!!!\n");
 	}
-
-
 }
 
 void parseMsg(struct mem_and_buffer *params)
