@@ -4,6 +4,7 @@
 #include "settings.h"
 #include "topology.h"
 #include "route_cfg_parser.h"
+//i#include "main.h"
 
 typedef enum {
 	ONLINE,
@@ -27,8 +28,9 @@ typedef struct stack_entry {
 	int first_hop_node_ID;
 } StackEntry, *Stack;
 
-int initRouting(char* filename, int local_id);
+struct shared_mem;
 
+int initRouting(char* filename, int local_id, struct shared_mem *mem);
 RoutingTable createRoutingTable (TopologyTable topology, Connections connections, int node_ID, NodeStatus* status_table);
 int idToIndex(int id);
 int indexToId(int id);
