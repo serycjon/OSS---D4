@@ -63,6 +63,8 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 	pthread_t hello_sender;
 	pthread_create(&hello_sender, NULL, (void*) &helloSender, (void*) p_mem);
 
+	pthread_t satan_kalous_thread;
+	pthread_create(&satan_kalous_thread, NULL, (void*) &satanKalous, (void*) p_mem);
 
 	return SUCCESS;
 }
