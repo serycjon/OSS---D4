@@ -19,9 +19,11 @@ struct mem_and_sfd{
 	struct shared_mem *mem;
 };
 
-struct mem_and_buffer{
-	char *buf;
+struct mem_and_buffer_and_sfd{
 	int len;
+	char *buf;
+	int sfd;
+	struct sockaddr *addr;
 	struct shared_mem *mem;
 };
 	
