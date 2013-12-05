@@ -28,7 +28,7 @@ char *formMsgPacket(int source_id, int dest_id, char* text, int *len)
 
 void packetParser(void *parameter)
 {
-	struct mem_and_buffer *params = (struct mem_and_buffer *) parameter;
+	struct mem_and_buffer_and_sfd *params = (struct mem_and_buffer_and_sfd *) parameter;
 	char *buf = params->buf;
 	//printf("received: %s\n", buf);
 
@@ -51,7 +51,7 @@ void packetParser(void *parameter)
 	}
 }
 
-void parseMsg(struct mem_and_buffer *params)
+void parseMsg(struct mem_and_buffer_and_sfd *params)
 {
 	char *buf = params->buf;
 
@@ -61,7 +61,7 @@ void parseMsg(struct mem_and_buffer *params)
 			"%s\n", source_id, dest_id, buf+3);
 }
 
-void parseHello(struct mem_and_buffer *params)
+void parseHello(struct mem_and_buffer_and_sfd *params)
 {
 	int len = params->len;
 	char *buf = params->buf;
@@ -70,15 +70,26 @@ void parseHello(struct mem_and_buffer *params)
 		printf("INVALID hello!\n");
 	}
 	int source_id = (int)buf[1];
-	printf("HELLO from %d!\n", source_id);
+	struct real_connection *conn = &(params->mem->p_connections[source_id]);
+	if(conn->online==0){
+		printf("NODE %d WENT ONLINE!\n", source_id);
+	}
+	conn->type = IN_CONN;
+	conn->id = source_id;
+	conn->addr = params->addr;
+	conn->sockfd = params->sfd;
+	conn->last_seen = time(NULL);
+	conn->online = 1;
+
+	//printf("HELLO from %d!\n", source_id);
 }
 
-void parseNSU(struct mem_and_buffer *params)
+void parseNSU(struct mem_and_buffer_and_sfd *params)
 {
 	printf("received NSU\n");
 }
 
-void parseDD(struct mem_and_buffer *params)
+void parseDD(struct mem_and_buffer_and_sfd *params)
 {
 	printf("received DD\n");
 }
