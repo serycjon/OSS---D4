@@ -5,16 +5,6 @@ Jakub Kulhan's implementation of our task: https://github.com/jakubkulhan/d4node
 networking tutorial - http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html
 pthreads tutorial   - https://computing.llnl.gov/tutorials/pthreads/#CreatingThreads
 
-We will try to implement something like OSPF
-	http://youtu.be/iSCzRsGntEU
-		hello timer, dead timer (4x hello timer) - we dont have to agree on that (we will hardcode it)
-		----------------------------------
-		hello packet
-			source id
-			ACK bit (1 = this is ACK packet)
-		link-state request packet
-		link-state advertisement packet
-
 parseRouteConfiguration
 	put TopologyTable init into dedicated function in topology.c
 
