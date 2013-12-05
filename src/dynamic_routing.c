@@ -37,7 +37,7 @@ void *get_in_port(struct sockaddr *sa)
 int inInit(void* mem)
 {
 	int port_number = ((struct shared_mem*)mem) ->local_port;
-	printf("port: %d\n", port_number);
+	// printf("port: %d\n", port_number);
 	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
@@ -45,7 +45,7 @@ int inInit(void* mem)
 	struct sockaddr_storage their_addr;
 	char buf[MAXBUFLEN];
 	socklen_t addr_len;
-	char s[INET6_ADDRSTRLEN];
+	//char s[INET6_ADDRSTRLEN];
 
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC; // set to AF_INET to force IPv4
@@ -84,7 +84,7 @@ int inInit(void* mem)
 
 	freeaddrinfo(servinfo);
 
-	printf("listener: waiting to recvfrom...\n");
+	//printf("listener: waiting to recvfrom...\n");
 
 	addr_len = sizeof their_addr;
 	for(;;){
@@ -92,22 +92,24 @@ int inInit(void* mem)
 			perror("recvfrom");
 			continue;
 		}
-		int port;//  = ntohs(their_addr.sin_port);
-		port = ntohs( *(unsigned short *)get_in_port((struct sockaddr *)&their_addr));
+	//	int port;//  = ntohs(their_addr.sin_port);
+	//	port = ntohs( *(unsigned short *)get_in_port((struct sockaddr *)&their_addr));
 
-		printf("listener: got packet from %s:%d\n",
-				inet_ntop(their_addr.ss_family,
-					get_in_addr((struct sockaddr *)&their_addr), s, sizeof s), port);
+	//	printf("listener: got packet from %s:%d\n",
+	//			inet_ntop(their_addr.ss_family,
+	//				get_in_addr((struct sockaddr *)&their_addr), s, sizeof s), port);
 		// printf("listener: packet is %d bytes long\n", numbytes);
 		// buf[numbytes] = '\0';
 		// printf("listener: packet contains \"%s\"\n", buf);
 
 		char *buf_cpy = (char *) malloc(BUF_SIZE * sizeof(char));
 		memcpy(buf_cpy, &buf, numbytes*sizeof(char));
-		struct mem_and_buffer param;
+		struct mem_and_buffer_and_sfd param;
 		param.buf = buf_cpy;
 		param.len = numbytes;
 		param.mem = (struct shared_mem *) mem;
+		param.sfd = sockfd;
+		param.addr = (struct sockaddr *)&their_addr;
 		
 		pthread_t parse_thread;
 		pthread_create(&parse_thread, NULL, (void*) &packetParser, (void*) &param); 
@@ -141,7 +143,7 @@ void outInit(struct shared_mem *mem, Connections out_conns)
 		char port_str[5];
 		sprintf(port_str, "%d", out_conns.array[i].port);
 		/* Obtain address(es) matching host/port */
-		printf("trying to connect to %s:%s\n", out_conns.array[i].ip_address, port_str);
+		//printf("trying to connect to %s:%s\n", out_conns.array[i].ip_address, port_str);
 		s = getaddrinfo(out_conns.array[i].ip_address, port_str, &hints, &result);
 		if (s != 0) {
 			fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
@@ -177,7 +179,7 @@ void outInit(struct shared_mem *mem, Connections out_conns)
 			continue;
 		}
 
-		printf("connection succesfull");
+		//printf("connection succesfull\n");
 
 		freeaddrinfo(result);           /* No longer needed */
 
@@ -209,12 +211,12 @@ void outInit(struct shared_mem *mem, Connections out_conns)
 	}
 }
 
-void sockListener(void *param)
+void sockListener(void *in_param)
 {
-	printf("starting new listener...\n");
-	int sfd = ((struct mem_and_sfd*)param)->sfd;
+	//printf("starting new listener...\n");
+	int sfd = ((struct mem_and_sfd*)in_param)->sfd;
 	//printf("using listening socket: %d\n", sfd);
-	int s;
+	//int s;
 	struct sockaddr_storage peer_addr;
 	socklen_t peer_addr_len = sizeof(struct sockaddr_storage);
 	ssize_t nread;
@@ -229,18 +231,30 @@ void sockListener(void *param)
 			continue;               /* Ignore failed request */
 		}
 
-		char host[NI_MAXHOST], service[NI_MAXSERV];
+		char *buf_cpy = (char *) malloc(BUF_SIZE * sizeof(char));
+		memcpy(buf_cpy, &buf, nread*sizeof(char));
+		struct mem_and_buffer_and_sfd param;
+		param.buf = buf_cpy;
+		param.len = nread;
+		param.mem = ((struct mem_and_sfd *)in_param)->mem;
+		param.sfd = sfd;
+		param.addr = (struct sockaddr *)&peer_addr;
+		
+		pthread_t parse_thread;
+		pthread_create(&parse_thread, NULL, (void*) &packetParser, (void*) &param); 
 
-		s = getnameinfo((struct sockaddr *) &peer_addr,
-				peer_addr_len, host, NI_MAXHOST,
-				service, NI_MAXSERV, NI_NUMERICSERV);
-		if (s == 0){
-			printf("Received %ld bytes from %s:%s\n",
-					(long) nread, host, service);
-			printf("got: %s\n", buf);
-		}else{
-			fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
-		}
+		// char host[NI_MAXHOST], service[NI_MAXSERV];
+
+		// s = getnameinfo((struct sockaddr *) &peer_addr,
+		// 		peer_addr_len, host, NI_MAXHOST,
+		// 		service, NI_MAXSERV, NI_NUMERICSERV);
+		// if (s == 0){
+		// 	printf("Received %ld bytes from %s:%s\n",
+		// 			(long) nread, host, service);
+		// 	printf("got: %s\n", buf);
+		// }else{
+		// 	fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
+		// }
 	}
 }
 
@@ -258,6 +272,11 @@ void helloSender(void *param)
 				//printf("Helloer ID:%d\n", conns[i].id);
 				if(conns[i].type == OUT_CONN){
 					sendto(conns[i].sockfd, msg, len, 0, 0, 0);
+				}else{
+					socklen_t addr_len;
+					addr_len = sizeof(*(conns[i].addr));
+					sendto(conns[i].sockfd, msg, len, 0, conns[i].addr, addr_len);
+					// printf("IN_CONN_HELLO: %d\n", conns[i].id);
 				}
 			}
 		}
@@ -265,4 +284,28 @@ void helloSender(void *param)
 	}
 }
 
+void satanKalous(void *param)
+{
+	struct shared_mem mem = *((struct shared_mem*) param);
+	struct real_connection *conns = mem.p_connections;
 
+	time_t end;
+	double time_since_last_seen;
+
+
+	int i;
+	for(;;){
+		end = time(NULL);
+		for(i=0; i<MAX_NODES; i++){
+			if(conns[i].online==1){
+				time_since_last_seen = difftime(end, conns[i].last_seen);
+				//printf("node %d last seen %lf s ago...\n", conns[i].id, time_since_last_seen);
+				if(time_since_last_seen > DEATH_TIMER){
+					conns[i].online = 0;
+					printf("NODE %d went OFFLINE!!!\n", conns[i].id);
+				}
+			}
+		}
+		sleep(DEATH_TIMER);
+	}
+}
