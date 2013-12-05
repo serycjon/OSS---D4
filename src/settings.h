@@ -9,7 +9,8 @@
 #define MAX_NODES (MAX_ID - MIN_ID)
 #define MAX_LINKS 1000
 #define MAX_CONNECTIONS 5
-#define HELLO_TIMER 3
+#define HELLO_TIMER 1
+#define DEATH_TIMER 3
 
 #define BUF_SIZE 200
 
