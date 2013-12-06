@@ -16,6 +16,8 @@ struct real_connection{
 };
 
 
+void *get_in_addr(struct sockaddr *sa);
+void *get_in_port(struct sockaddr *sa);
 int inInit(void* mem);
 void outInit(struct shared_mem *mem, Connections out_conns);
 void sockListener(void *param);
