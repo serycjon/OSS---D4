@@ -309,15 +309,19 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 	}
 	mem->p_status_table[id] = new_state;
 	sendNSU(id, new_state, mem);
+#ifdef DEBUG
 	showStatusTable(mem->p_topology->nodes_count, mem->p_status_table);
-	RoutingTable new_routing_table;
-	new_routing_table = createRoutingTable (*(mem->p_topology), mem->local_id, mem->p_status_table);
+#endif
+	RoutingTable *new_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
+	createRoutingTable (*(mem->p_topology), mem->local_id, mem->p_status_table, new_routing_table);
 	//RoutingTable *old_routing_table = mem->p_routing_table;
-	mem->p_routing_table = &new_routing_table;
+	mem->p_routing_table = new_routing_table;
 /* FREE AS A BIRD!!! */
 	//free(old_routing_table);
+#ifdef DEBUG
 	printf("ROUTING TABLE UPDATED!!!\n");
 	showRoutingTable(mem);
+#endif
 }
 
 void sendNSU(int id, int new_state, struct shared_mem *mem)
@@ -348,6 +352,10 @@ void sendToId(int dest_id, char *packet, int len, struct shared_mem *mem)
 {
 	if(dest_id >= mem->p_topology->nodes_count){
 		printf("cannot reach node %d\n", dest_id);
+		return;
+	}
+	if(dest_id == mem->local_id){
+		printf("why would you send anything to yourself!?!\n");
 		return;
 	}
 	int next_id = mem->p_routing_table->table[idToIndex(dest_id)].next_hop_id;
