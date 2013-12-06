@@ -69,8 +69,19 @@ void parseMsg(struct mem_and_buffer_and_sfd *params)
 
 	int dest_id = (int)buf[1];
 	int source_id = (int)buf[2];
+	#ifdef DEBUG
 	printf("Received MSG from %d to %d:\n"
 			"%s\n", source_id, dest_id, buf+3);
+	#endif
+	if(dest_id!=params->mem->local_id){
+		#ifdef DEBUG
+		printf("I should send it elsewhere!\n");
+		#endif
+		sendToId(dest_id, buf, params->len, params->mem);
+	} else {
+		printf("Received message from node #%d:\n", source_id);
+		printf("%s\n", buf+3);
+	}
 }
 
 void parseHello(struct mem_and_buffer_and_sfd *params)
