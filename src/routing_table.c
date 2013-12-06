@@ -37,7 +37,7 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 	NodeStatus status_table[topology.nodes_count];
 	int i;
 	for(i = 0; i < topology.nodes_count; i++){
-		status_table[i] = ONLINE;
+		status_table[i] = OFFLINE;
 	}
 	//status_table[idToIndex(2)] = OFFLINE;
 	// status_table[idToIndex(3)] = OFFLINE;
@@ -52,9 +52,13 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 	p_mem->local_id = local_id;
 	p_mem->local_port = local_port;
 	p_mem->p_connections = real_conn_array;
+	for(i=0; i<MAX_NODES; i++){
+		real_conn_array[i].online = OFFLINE;
+		real_conn_array[i].id = 0;
+	}
 	p_mem->p_topology = &topology;
 	p_mem->p_routing_table = &routing_table;
-	p_mem->p_status_table =(NodeStatus **) &status_table;
+	p_mem->p_status_table =(NodeStatus *) status_table;
 	outInit(p_mem, local_connections);
 
 	pthread_t listen_thread;
@@ -143,11 +147,11 @@ RoutingTable createRoutingTable (TopologyTable topology, Connections connections
 
 int idToIndex(int id)
 {
-	return id - MIN_ID;
+	return id; // - MIN_ID;
 }
 
 int indexToId(int index){
-	return index + MIN_ID;
+	return index;// + MIN_ID;
 }
 
 void showRoutingTable(RoutingTable routing_table)
