@@ -82,6 +82,7 @@ void parseMsg(struct mem_and_buffer_and_sfd *params)
 		printf("Received message from node #%d:\n", source_id);
 		printf("%s\n", buf+3);
 	}
+	//free(params);
 }
 
 void parseHello(struct mem_and_buffer_and_sfd *params)
@@ -105,6 +106,7 @@ void parseHello(struct mem_and_buffer_and_sfd *params)
 	conn->online = ONLINE;
 
 	//printf("HELLO from %d!\n", source_id);
+	//free(params);
 }
 
 void parseNSU(struct mem_and_buffer_and_sfd *params)
@@ -123,9 +125,11 @@ void parseNSU(struct mem_and_buffer_and_sfd *params)
 		//printf("I have heard that node %d has changed its state!\n", id);
 		reactToStateChange(id, new_state, params->mem);
 	}
+	//free(params);
 }
 
 void parseDD(struct mem_and_buffer_and_sfd *params)
 {
 	printf("received DD\n");
+	//free(params);
 }
