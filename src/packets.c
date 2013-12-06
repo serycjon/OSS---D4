@@ -120,7 +120,7 @@ void parseNSU(struct mem_and_buffer_and_sfd *params)
 	int new_state = (int)buf[2];
 	
 	if(params->mem->p_status_table[id]!=new_state){
-		printf("I have heard that node %d has changed its state!\n", id);
+		//printf("I have heard that node %d has changed its state!\n", id);
 		reactToStateChange(id, new_state, params->mem);
 	}
 }
