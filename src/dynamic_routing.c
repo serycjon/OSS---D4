@@ -329,23 +329,38 @@ void sendNSU(int id, int new_state, struct shared_mem *mem)
 
 void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *mem)
 {
-	int i;
-	for(i=0; i<MAX_NODES; i++){
-		if(i != not_to){
-			sendToId(i, packet, len, mem);	
+	int id;
+	struct real_connection *conns = mem->p_connections;
+	for(id=0; id<MAX_NODES; id++){
+		if(id != not_to){
+			if(conns[id].type == OUT_CONN){
+				sendto(conns[id].sockfd, packet, len, 0, 0, 0);
+			}else{
+				socklen_t addr_len;
+				addr_len = sizeof(*(conns[id].addr));
+				sendto(conns[id].sockfd, packet, len, 0, conns[id].addr, addr_len);
+			}
 		}
 	}
 }
 
-void sendToId(int id, char *packet, int len, struct shared_mem *mem)
+void sendToId(int dest_id, char *packet, int len, struct shared_mem *mem)
 {
+	if(dest_id >= mem->p_topology->nodes_count){
+		printf("cannot reach node %d\n", dest_id);
+		return;
+	}
+	int next_id = mem->p_routing_table->table[idToIndex(dest_id)].next_hop_id;
+	if(next_id==-1){
+		printf("cannot reach node %d\n", dest_id);
+		return;
+	}
 	struct real_connection *conns = mem->p_connections;
-		//printf("send to id\n");
-		if(conns[id].type == OUT_CONN){
-			sendto(conns[id].sockfd, packet, len, 0, 0, 0);
-		}else{ // if(conns[id].type == IN_CONN){
-			socklen_t addr_len;
-			addr_len = sizeof(*(conns[id].addr));
-			sendto(conns[id].sockfd, packet, len, 0, conns[id].addr, addr_len);
-		}
+	if(conns[next_id].type == OUT_CONN){
+		sendto(conns[next_id].sockfd, packet, len, 0, 0, 0);
+	} else {
+		socklen_t addr_len;
+		addr_len = sizeof(*(conns[next_id].addr));
+		sendto(conns[next_id].sockfd, packet, len, 0, conns[next_id].addr, addr_len);
+	}
 }
