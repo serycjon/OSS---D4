@@ -11,7 +11,7 @@ struct shared_mem {
 	struct real_connection *p_connections;
 	TopologyTable *p_topology;
 	RoutingTable *p_routing_table;
-	NodeStatus **p_status_table;
+	NodeStatus *p_status_table;
 };
 
 struct mem_and_sfd{
