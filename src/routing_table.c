@@ -29,6 +29,7 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 	if (result == FAILURE) {
 		return FAILURE;
 	}
+	p_mem->p_topology = &topology;
 
 	#ifdef DEBUG
 	showTopology(topology);
@@ -39,8 +40,8 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 	for(i = 0; i < topology.nodes_count; i++){
 		status_table[i] = OFFLINE;
 	}
-	//status_table[idToIndex(2)] = OFFLINE;
-	// status_table[idToIndex(3)] = OFFLINE;
+	status_table[local_id] = ONLINE;
+	p_mem->p_status_table =(NodeStatus *) status_table;
 	showStatusTable(topology.nodes_count, status_table);
 
 	RoutingTable routing_table = createRoutingTable(topology, local_id, status_table);
@@ -57,8 +58,6 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 		real_conn_array[i].online = OFFLINE;
 		real_conn_array[i].id = 0;
 	}
-	p_mem->p_topology = &topology;
-	p_mem->p_status_table =(NodeStatus *) status_table;
 	outInit(p_mem, local_connections);
 
 	pthread_t listen_thread;
@@ -84,7 +83,7 @@ RoutingTable createRoutingTable (TopologyTable topology, int node_ID, NodeStatus
 	visited_nodes = 0;
 
 
-	for(i=0; i<topology.nodes_count;i++){
+	for(i=0; i<topology.nodes_count+1;i++){
 		RoutingTableEntry no_path;
 		//no_path.next_hop_port = -1;
 		no_path.next_hop_id = -1;
@@ -101,8 +100,8 @@ RoutingTable createRoutingTable (TopologyTable topology, int node_ID, NodeStatus
 
 	for(i=0; i<topology.neighbors_counts[idToIndex(node_ID)]; i++){			//adding close neighbors into queue and routing_table
 		int new_node_ID  = indexToId(topology.table[idToIndex(node_ID)][i]);
-		if(routing_table.table[idToIndex(new_node_ID)].next_hop_id == -1 &&
-				status_table[idToIndex(new_node_ID)] == ONLINE){
+		if(status_table[idToIndex(new_node_ID)] == ONLINE&&
+				routing_table.table[idToIndex(new_node_ID)].next_hop_id == -1){
 			QueueEntry new;
 			RoutingTableEntry new_entry; //add IP and port!
 			new_entry.next_hop_id = new_node_ID;
@@ -177,34 +176,6 @@ void showRoutingTable(struct shared_mem *mem)
 	}
 	printf("---------------\n\n");
 }
-
-/* // discontinued...
-   void setAddressById(int id, RoutingTableEntry* entry, Connections connections)
-   {
-#ifdef DEBUG
-printf("debug setAddressById: looking for connection to %d\n", id);
-#endif
-int i;
-int state = FAILURE;
-for(i=0; i<connections.count; i++){
-if(connections.array[i].id == id){
-entry->next_hop_id = connections.array[i].id;
-entry->next_hop_port = connections.array[i].port;
-strcpy(entry->next_hop_ip, connections.array[i].ip_address);
-state = SUCCESS;
-break;
-}
-}
-if(state == FAILURE){
-#ifdef DEBUG
-printf("debug setAddressById: no connection found for id %d\n", id);
-#endif
-entry->next_hop_id = id;
-entry->next_hop_port = -1;
-strcpy(entry->next_hop_ip, "127.0.0.1");
-}
-}
-*/
 
 void showStatusTable(int status_table_size, NodeStatus* status_table)
 {
