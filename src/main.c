@@ -3,6 +3,7 @@
 #include "main.h"
 #include "routing_table.h"
 #include "settings.h"
+#include "packets.h"
 
 void startInterface();
 
@@ -36,21 +37,24 @@ int main(int argc, char** argv){
 	struct shared_mem mem;
 	// Process the config file
 	initRouting(config_file_name, node_id, &mem);
-	startInterface();
+	startInterface(&mem);
 	return 0;
 }
 
-void startInterface()
+void startInterface(struct shared_mem *mem)
 {
-	int id;
+	int dest_id;
 	char buffer[250];
 	char msg[250];
+	int len;
 	
 	while(fgets(buffer, 250, stdin)){
 	//	scanf("%d %s", &id, buffer)){
 		//printf("%d %s\n", id, buffer);
-		if(sscanf(buffer, "%d %s", &id, msg) == 2){
-			printf("dest_id: %d; msg: %s\n", id, msg);
+		if(sscanf(buffer, "%d %s", &dest_id, msg) == 2){
+			char *packet = formMsgPacket(mem->local_id, dest_id, msg, &len);
+			sendToId(dest_id, packet, len, mem);
+			//printf("dest_id: %d; msg: %s\n", id, msg);
 		}else{
 			printf("[ERROR] wrong format!\n"
 					"please enter the destination ID and then your message.\n");
