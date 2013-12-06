@@ -21,5 +21,10 @@ void outInit(struct shared_mem *mem, Connections out_conns);
 void sockListener(void *param);
 void helloSender(void *param);
 void satanKalous(void *param);
+void reactToStateChange(int id, int new_state, struct shared_mem *mem);
+void sendNSU(int id, int new_state, struct shared_mem *mem);
+void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *mem);
+void sendToId(int id, char *packet, int len, struct shared_mem *mem);
+
 
 #endif
