@@ -14,8 +14,8 @@ typedef enum {
 
 typedef struct routing_table_entry {
 	int next_hop_id;
-	int next_hop_port;
-	char next_hop_ip[IP_ADDRESS_MAX_LENGTH];
+	//int next_hop_port;
+	//char next_hop_ip[IP_ADDRESS_MAX_LENGTH];
 } RoutingTableEntry;
 
 typedef struct routing_table {
@@ -26,16 +26,18 @@ typedef struct routing_table {
 typedef struct stack_entry {
 	int final_node_ID;
 	int first_hop_node_ID;
-} StackEntry, *Stack;
+} QueueEntry, *Queue;
 
 struct shared_mem;
 
 int initRouting(char* filename, int local_id, struct shared_mem *mem);
-RoutingTable createRoutingTable (TopologyTable topology, Connections connections, int node_ID, NodeStatus* status_table);
+RoutingTable createRoutingTable (TopologyTable topology, int node_ID, NodeStatus* status_table);
 int idToIndex(int id);
 int indexToId(int id);
-void showRoutingTable(RoutingTable routing_table);
-void setAddressById(int id, RoutingTableEntry* entry, Connections connections);
+void showRoutingTable(struct shared_mem *mem);
+/* //discontinued
+ * void setAddressById(int id, RoutingTableEntry* entry, Connections connections);
+ */
 void showStatusTable(int status_table_size, NodeStatus* state_table);
 
 #endif
