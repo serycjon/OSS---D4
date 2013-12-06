@@ -1,3 +1,4 @@
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "main.h"
@@ -7,13 +8,15 @@
 
 void startInterface();
 
-void print_usage(char* file_name){
+void print_usage(char* file_name)
+{
 	printf("Usage: %s <id> [ <config_file> ]\n", file_name);
 	printf("Description: .............blablabla\n"
 		"... blabla ...\n");
 }
 
-int main(int argc, char** argv){
+int main(int argc, char** argv)
+{
 	// Read parameters
 	char* config_file_name;
 	if(argc < 2 || argc > 3){
@@ -34,10 +37,13 @@ int main(int argc, char** argv){
 		return 1;
 	}
 
-	struct shared_mem mem;
+	struct shared_mem *p_mem = (struct shared_mem *) malloc(sizeof(struct shared_mem));
 	// Process the config file
-	initRouting(config_file_name, node_id, &mem);
-	startInterface(&mem);
+	initRouting(config_file_name, node_id, p_mem);
+	printf("Topology table size: %d\n", p_mem->p_topology->nodes_count);
+	showRoutingTable(p_mem);
+
+	startInterface(p_mem);
 	return 0;
 }
 
@@ -49,16 +55,17 @@ void startInterface(struct shared_mem *mem)
 	int len;
 	
 	while(fgets(buffer, 250, stdin)){
-	//	scanf("%d %s", &id, buffer)){
-		//printf("%d %s\n", id, buffer);
-		if(sscanf(buffer, "%d %s", &dest_id, msg) == 2){
+		if(sscanf(buffer, "%d %[^\n]s", &dest_id, msg) == 2){  // notice [^\n]... scanf can read even strings with spaces! :)
+#ifdef DEBUG
+			printf("dest_id: %d; msg: %s\n", dest_id, msg);
+#endif
 			char *packet = formMsgPacket(mem->local_id, dest_id, msg, &len);
 			sendToId(dest_id, packet, len, mem);
-			//printf("dest_id: %d; msg: %s\n", id, msg);
+		}else if(strcmp("routable\n", buffer) == 0){
+			showRoutingTable(mem);
 		}else{
 			printf("[ERROR] wrong format!\n"
 					"please enter the destination ID and then your message.\n");
-			//printf("You have entered: %s\n", buffer);
 		}
 	}
 }
