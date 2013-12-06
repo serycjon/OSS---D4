@@ -204,7 +204,7 @@ void outInit(struct shared_mem *mem, Connections out_conns)
 		rc->id = out_conns.array[i].id;
 		rc->sockfd = sfd;
 		rc->last_seen = clock();
-		rc->online = 0;
+		rc->online = OFFLINE;
 
 
 
@@ -260,26 +260,15 @@ void sockListener(void *in_param)
 
 void helloSender(void *param)
 {
-	struct shared_mem mem = *((struct shared_mem*) param);
-	struct real_connection *conns = mem.p_connections;
+	struct shared_mem *mem = (struct shared_mem*) param;
+	//struct real_connection *conns = mem.p_connections;
 	int len;
-	char *msg = formHelloPacket(mem.local_id, &len);
+	char *msg = formHelloPacket(mem->local_id, &len);
 
-	int i;
+	//int i;
 	for(;;){
-		for(i=0; i<MAX_NODES; i++){
-			if(conns[i].id >= MIN_ID){
-				//printf("Helloer ID:%d\n", conns[i].id);
-				if(conns[i].type == OUT_CONN){
-					sendto(conns[i].sockfd, msg, len, 0, 0, 0);
-				}else{
-					socklen_t addr_len;
-					addr_len = sizeof(*(conns[i].addr));
-					sendto(conns[i].sockfd, msg, len, 0, conns[i].addr, addr_len);
-					// printf("IN_CONN_HELLO: %d\n", conns[i].id);
-				}
-			}
-		}
+		// 0 ~ send really to all neighbours
+		sendToNeighbours(0, msg, len, mem);
 		sleep(HELLO_TIMER);
 	}
 }
@@ -296,16 +285,59 @@ void satanKalous(void *param)
 	int i;
 	for(;;){
 		end = time(NULL);
-		for(i=0; i<MAX_NODES; i++){
-			if(conns[i].online==1){
+		for(i=MIN_ID; i<MAX_NODES; i++){
+			if(conns[i].online==ONLINE){
 				time_since_last_seen = difftime(end, conns[i].last_seen);
 				//printf("node %d last seen %lf s ago...\n", conns[i].id, time_since_last_seen);
 				if(time_since_last_seen > DEATH_TIMER){
-					conns[i].online = 0;
-					printf("NODE %d went OFFLINE!!!\n", conns[i].id);
+					conns[i].online = OFFLINE;
+					reactToStateChange(conns[i].id, OFFLINE, (struct shared_mem *) param);
+					//printf("NODE %d went OFFLINE!!!\n", conns[i].id);
 				}
 			}
 		}
 		sleep(DEATH_TIMER);
 	}
+}
+
+void reactToStateChange(int id, int new_state, struct shared_mem *mem)
+{
+	if(new_state == ONLINE){
+		printf("NODE %d WENT ONLINE!\n", id);
+	}else{
+		printf("NODE %d WENT OFFLINE!\n", id);
+	}
+	mem->p_status_table[id] = new_state;
+	sendNSU(id, new_state, mem);
+	showStatusTable(mem->p_topology->nodes_count, mem->p_status_table);
+}
+
+void sendNSU(int id, int new_state, struct shared_mem *mem)
+{
+	int len;
+	char *packet = formNSUPacket(id, new_state, &len);
+	sendToNeighbours(id, packet, len, mem);
+}
+
+void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *mem)
+{
+	int i;
+	for(i=0; i<MAX_NODES; i++){
+		if(i != not_to){
+			sendToId(i, packet, len, mem);	
+		}
+	}
+}
+
+void sendToId(int id, char *packet, int len, struct shared_mem *mem)
+{
+	struct real_connection *conns = mem->p_connections;
+		//printf("send to id\n");
+		if(conns[id].type == OUT_CONN){
+			sendto(conns[id].sockfd, packet, len, 0, 0, 0);
+		}else{ // if(conns[id].type == IN_CONN){
+			socklen_t addr_len;
+			addr_len = sizeof(*(conns[id].addr));
+			sendto(conns[id].sockfd, packet, len, 0, conns[id].addr, addr_len);
+		}
 }
