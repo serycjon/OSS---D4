@@ -18,6 +18,7 @@
 
 void *get_in_addr(struct sockaddr *sa)
 {
+	if (sa == NULL) return "NULL";
 	if (sa->sa_family == AF_INET) {
 		return &(((struct sockaddr_in*)sa)->sin_addr);
 	}
@@ -41,7 +42,7 @@ int inInit(void* mem)
 	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
-	int numbytes;
+	ssize_t numbytes;
 	struct sockaddr_storage their_addr;
 	char buf[MAXBUFLEN];
 	socklen_t addr_len;
@@ -93,6 +94,12 @@ int inInit(void* mem)
 			continue;
 		}
 
+		//printf("numbytes: %zd\n", numbytes);
+
+		// we have to deepcopy sockaddr so it doesnt get overwritten
+		struct sockaddr *addr_cpy = (struct sockaddr *) malloc(sizeof(struct sockaddr));
+		addr_cpy->sa_family = ((struct sockaddr *)&their_addr)->sa_family;
+		memcpy(addr_cpy->sa_data, ((struct sockaddr *)&their_addr)->sa_data, sizeof(((struct sockaddr *)&their_addr)->sa_data));
 		char *buf_cpy = (char *) malloc(BUF_SIZE * sizeof(char));
 		memcpy(buf_cpy, &buf, numbytes*sizeof(char));
 		struct mem_and_buffer_and_sfd param;
@@ -100,7 +107,7 @@ int inInit(void* mem)
 		param.len = numbytes;
 		param.mem = (struct shared_mem *) mem;
 		param.sfd = sockfd;
-		param.addr = (struct sockaddr *)&their_addr;
+		param.addr = addr_cpy;
 		
 		pthread_t parse_thread;
 		pthread_create(&parse_thread, NULL, (void*) &packetParser, (void*) &param); 
@@ -222,6 +229,7 @@ void sockListener(void *in_param)
 
 		char *buf_cpy = (char *) malloc(BUF_SIZE * sizeof(char));
 		memcpy(buf_cpy, &buf, nread*sizeof(char));
+		//printf("size: %zd\n", nread);
 		struct mem_and_buffer_and_sfd param;
 		param.buf = buf_cpy;
 		param.len = nread;
@@ -247,6 +255,7 @@ void helloSender(void *param)
 	//int i;
 	for(;;){
 		// 0 ~ send really to all neighbours
+		//printf("saying hello!\n");
 		sendToNeighbours(0, msg, len, mem);
 		sleep(HELLO_TIMER);
 	}
@@ -265,12 +274,15 @@ void satanKalous(void *param)
 	for(;;){
 		end = time(NULL);
 		for(i=MIN_ID; i<MAX_NODES; i++){
+			if(i==mem.local_id) continue;
+			//if(mem.p_status_table[i] == ONLINE){
 			if(conns[i].online==ONLINE){
 				time_since_last_seen = difftime(end, conns[i].last_seen);
 				//printf("node %d last seen %lf s ago...\n", conns[i].id, time_since_last_seen);
 				if(time_since_last_seen > DEATH_TIMER){
+					printf("SATAN KALOUS says: node %d is death!\n", i);
 					conns[i].online = OFFLINE;
-					reactToStateChange(conns[i].id, OFFLINE, (struct shared_mem *) param);
+					reactToStateChange(i, OFFLINE, (struct shared_mem *) param);
 					//printf("NODE %d went OFFLINE!!!\n", conns[i].id);
 				}
 			}
@@ -281,6 +293,7 @@ void satanKalous(void *param)
 
 void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 {
+	if(mem->p_status_table[id]==new_state) return;
 	if(new_state == ONLINE){
 		printf("NODE %d WENT ONLINE!\n", id);
 	}else{
@@ -315,7 +328,16 @@ void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *mem)
 	int id;
 	struct real_connection *conns = mem->p_connections;
 	for(id=0; id<MAX_NODES; id++){
-		if(id != not_to){
+		if(id != not_to && conns[id].id!=-1){
+			// char s[INET6_ADDRSTRLEN];
+			//printf("will try to send to node %d\n", id);
+			// if(conns[id].addr != NULL){
+			// 	inet_ntop(conns[id].addr->sa_family,
+			// 			get_in_addr(conns[id].addr),
+			// 			s, sizeof s);
+			// 	int port = ntohs(((struct sockaddr_in *)conns[id].addr)->sin_port);
+			// 	printf("type: %s\nsfd: %d\naddr: %s\nport: %d\n", conns[id].type==OUT_CONN?"OUT":"IN", conns[id].sockfd,s,port);
+			// }
 			if(conns[id].type == OUT_CONN){
 				sendto(conns[id].sockfd, packet, len, 0, 0, 0);
 			}else{
@@ -325,6 +347,7 @@ void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *mem)
 			}
 		}
 	}
+	//printf("everything sent\n");
 }
 
 void sendToId(int dest_id, char *packet, int len, struct shared_mem *mem)
