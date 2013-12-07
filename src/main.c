@@ -39,9 +39,9 @@ int main(int argc, char** argv)
 
 	struct shared_mem *p_mem = (struct shared_mem *) malloc(sizeof(struct shared_mem));
 	// Process the config file
-	pthread_mutex_init(&p_mem.mutexes.routing_mutex, NULL);
-	pthread_mutex_init(&p_mem.mutexes.status_mutex, NULL);
-	pthread_mutex_init(&p_mem.mutexes.connection_mutex, NULL);
+	pthread_mutex_init(&p_mem->mutexes.routing_mutex, NULL);
+	pthread_mutex_init(&p_mem->mutexes.status_mutex, NULL);
+	pthread_mutex_init(&p_mem->mutexes.connection_mutex, NULL);
 	initRouting(config_file_name, node_id, p_mem);
 	printf("Topology table size: %d\n", p_mem->p_topology->nodes_count);
 	showRoutingTable(p_mem);
