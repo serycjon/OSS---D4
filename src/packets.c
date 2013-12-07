@@ -1,12 +1,43 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <arpa/inet.h>
 #include "dynamic_routing.h"
 #include "packets.h"
 #include "main.h"
 
+char *formDDPacket(NodeStatus *state_table, int *len)
+{
+	uint32_t mask = 1 << 31; // only MSB is set
+	uint32_t bit_field[8]; // we need 8*32 bits
+	int i, bit_field_index, int_index;
+	for(i=0; i < 8;   i++){
+		bit_field[i] = 0; // better safe than sorry. probably isn't necessary
+	}
+
+	for(i=0; i < 256; i++){
+		if(state_table == ONLINE){
+			bit_field_index = i/32;
+			int_index = i%32;
+			bit_field[bit_field_index] |= mask >> int_index;
+		}
+	}
+
+	//printf("bits of first part %u\n", bit_field[0]);
+
+	char *msg = (char *) malloc(sizeof(char) + 8*sizeof(uint32_t));
+	msg[0] = T_DD;
+	for(i=0; i<8; i++){
+		msg[1+(i*32)] = htonl(bit_field[i]);
+	}
+	*len = 8*32 + 1;
+	return msg;
+}
+
 char *formNSUPacket(int id, int new_state, int *len)
 {
+	//printf("sending NSU about node %d..\n", id);
 	char *msg = (char *) malloc(3*sizeof(char));
 	msg[0] = T_NSU;
 	msg[1] = (char) id;
@@ -44,6 +75,13 @@ void packetParser(void *parameter)
 	char *buf = params->buf;
 	//printf("received: %s\n", buf);
 
+	if(params->len < 1 || buf==NULL){
+		printf("PACKET of zero length!!\n");
+		free(params->buf);
+		params->buf = NULL;
+		return;
+	}
+
 	char type = buf[0];
 	switch(type){
 		case T_MSG:
@@ -62,6 +100,7 @@ void packetParser(void *parameter)
 			printf("INVALID TYPE!!!\n");
 	}
 	free(params->buf);
+	params->buf = NULL;
 	//free(parameter);
 }
 
@@ -71,14 +110,14 @@ void parseMsg(struct mem_and_buffer_and_sfd *params)
 
 	int dest_id = (int)buf[1];
 	int source_id = (int)buf[2];
-	#ifdef DEBUG
+#ifdef DEBUG
 	printf("Received MSG from %d to %d:\n"
 			"%s\n", source_id, dest_id, buf+3);
-	#endif
+#endif
 	if(dest_id!=params->mem->local_id){
-		#ifdef DEBUG
+#ifdef DEBUG
 		printf("I should send it elsewhere!\n");
-		#endif
+#endif
 		sendToId(dest_id, buf, params->len, params->mem);
 	} else {
 		printf("Received message from node #%d:\n", source_id);
@@ -93,19 +132,20 @@ void parseHello(struct mem_and_buffer_and_sfd *params)
 	char *buf = params->buf;
 
 	if(len!=2*sizeof(char)){
-		printf("INVALID hello!\n");
+		printf("INVALID hello size!\n");
 	}
 	int source_id = (int)buf[1];
+	//printf("Got hello from %d\n", source_id);
 	struct real_connection *conn = &(params->mem->p_connections[source_id]);
-	if(conn->online==OFFLINE){
-		reactToStateChange(source_id, ONLINE, params->mem);
-	}
 	conn->type = IN_CONN;
 	conn->id = source_id;
 	conn->addr = params->addr;
 	conn->sockfd = params->sfd;
 	conn->last_seen = time(NULL);
 	conn->online = ONLINE;
+	//if(conn->online==OFFLINE){
+	reactToStateChange(source_id, ONLINE, params->mem);
+	//}
 
 	//printf("HELLO from %d!\n", source_id);
 	//free(params);
@@ -122,9 +162,9 @@ void parseNSU(struct mem_and_buffer_and_sfd *params)
 	}
 	int id = (int)buf[1];
 	int new_state = (int)buf[2];
-	
+
 	if(params->mem->p_status_table[id]!=new_state){
-		//printf("I have heard that node %d has changed its state!\n", id);
+		printf("I have heard that node %d has changed its state!\n", id);
 		reactToStateChange(id, new_state, params->mem);
 	}
 	//free(params);
