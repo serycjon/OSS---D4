@@ -92,15 +92,6 @@ int inInit(void* mem)
 			perror("recvfrom");
 			continue;
 		}
-	//	int port;//  = ntohs(their_addr.sin_port);
-	//	port = ntohs( *(unsigned short *)get_in_port((struct sockaddr *)&their_addr));
-
-	//	printf("listener: got packet from %s:%d\n",
-	//			inet_ntop(their_addr.ss_family,
-	//				get_in_addr((struct sockaddr *)&their_addr), s, sizeof s), port);
-		// printf("listener: packet is %d bytes long\n", numbytes);
-		// buf[numbytes] = '\0';
-		// printf("listener: packet contains \"%s\"\n", buf);
 
 		char *buf_cpy = (char *) malloc(BUF_SIZE * sizeof(char));
 		memcpy(buf_cpy, &buf, numbytes*sizeof(char));
@@ -113,10 +104,7 @@ int inInit(void* mem)
 		
 		pthread_t parse_thread;
 		pthread_create(&parse_thread, NULL, (void*) &packetParser, (void*) &param); 
-
-		// if(sendto(sockfd,buf,strlen(buf),0,(struct sockaddr *)&their_addr,sizeof(their_addr)) < 0){
-		// 	perror("odpoved");
-		// }
+		pthread_detach(parse_thread);
 
 	}
 
@@ -194,6 +182,7 @@ void outInit(struct shared_mem *mem, Connections out_conns)
 
 		pthread_t listen_thread;
 		pthread_create(&listen_thread, NULL, (void*) &sockListener, (void*) param);
+		pthread_detach(listen_thread);
 
 		//sendto(sfd, "Ahojky!", strlen("Ahojky!")+1, 0, 0, 0);
 
@@ -239,22 +228,12 @@ void sockListener(void *in_param)
 		param.mem = ((struct mem_and_sfd *)in_param)->mem;
 		param.sfd = sfd;
 		param.addr = (struct sockaddr *)&peer_addr;
-		
+
 		pthread_t parse_thread;
 		pthread_create(&parse_thread, NULL, (void*) &packetParser, (void*) &param); 
+		pthread_join(parse_thread, NULL);
 
-		// char host[NI_MAXHOST], service[NI_MAXSERV];
-
-		// s = getnameinfo((struct sockaddr *) &peer_addr,
-		// 		peer_addr_len, host, NI_MAXHOST,
-		// 		service, NI_MAXSERV, NI_NUMERICSERV);
-		// if (s == 0){
-		// 	printf("Received %ld bytes from %s:%s\n",
-		// 			(long) nread, host, service);
-		// 	printf("got: %s\n", buf);
-		// }else{
-		// 	fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
-		// }
+		//free(buf_cpy);
 	}
 }
 
@@ -316,7 +295,7 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 	createRoutingTable (*(mem->p_topology), mem->local_id, mem->p_status_table, new_routing_table);
 	//RoutingTable *old_routing_table = mem->p_routing_table;
 	mem->p_routing_table = new_routing_table;
-/* FREE AS A BIRD!!! */
+	/* FREE AS A BIRD!!! */
 	//free(old_routing_table);
 #ifdef DEBUG
 	printf("ROUTING TABLE UPDATED!!!\n");
