@@ -12,7 +12,7 @@ struct shared_mem {
 	TopologyTable *p_topology;
 	RoutingTable *p_routing_table;
 	NodeStatus *p_status_table;
-	struct mutexes;
+	//struct mutexes;
 };
 
 
