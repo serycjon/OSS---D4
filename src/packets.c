@@ -29,9 +29,9 @@ char *formDDPacket(NodeStatus *state_table, int *len)
 	char *msg = (char *) malloc(sizeof(char) + 8*sizeof(uint32_t));
 	msg[0] = T_DD;
 	for(i=0; i<8; i++){
-		msg[1+(i*32)] = htonl(bit_field[i]);
+		msg[1+(i*4)] = htonl(bit_field[i]);
 	}
-	*len = 8*32 + 1;
+	*len = 8*4 + 1;
 	return msg;
 }
 
@@ -172,6 +172,40 @@ void parseNSU(struct mem_and_buffer_and_sfd *params)
 
 void parseDD(struct mem_and_buffer_and_sfd *params)
 {
-	printf("received DD\n");
-	//free(params);
+	int len = params->len;
+	char *buf = params->buf;
+
+	printf("received DD packet\n");
+	if(len!=33*sizeof(char)){
+		printf("INVALID DD length! (%d)\n", len);
+	}
+	int id = (int)buf[1];
+	int new_state = (int)buf[2];
+
 }
+/*{
+	uint32_t mask = 1 << 31; // only MSB is set
+	uint32_t bit_field[8]; // we need 8*32 bits
+	int i, bit_field_index, int_index;
+	for(i=0; i < 8;   i++){
+		bit_field[i] = 0; // better safe than sorry. probably isn't necessary
+	}
+
+	for(i=0; i < 256; i++){
+		if(state_table == ONLINE){
+			bit_field_index = i/32;
+			int_index = i%32;
+			bit_field[bit_field_index] |= mask >> int_index;
+		}
+	}
+
+	//printf("bits of first part %u\n", bit_field[0]);
+
+	char *msg = (char *) malloc(sizeof(char) + 8*sizeof(uint32_t));
+	msg[0] = T_DD;
+	for(i=0; i<8; i++){
+		msg[1+(i*32)] = htonl(bit_field[i]);
+	}
+	*len = 8*32 + 1;
+	return msg;
+}*/
