@@ -102,13 +102,17 @@ void packetParser(void *parameter)
 			printf("INVALID TYPE!!!\n");
 	}
 	free(params->buf);
-	params->buf = NULL;
+	//params->buf = NULL;
 	//free(parameter);
 }
 
 void parseMsg(struct mem_and_buffer_and_sfd *params)
 {
 	char *buf = params->buf;
+	if(params->len < 4 || params->buf==NULL){
+		printf("packet too short\n");
+		return;
+	}
 
 	int dest_id = (int)buf[1];
 	int source_id = (int)buf[2];
