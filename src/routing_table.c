@@ -11,9 +11,6 @@
 
 int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 {
-	pthread_mutex_lock(&p_mem.mutexes.routing_mutex);
-	pthread_mutex_lock(&p_mem.mutexes.status_mutex);
-	pthread_mutex_lock(&p_mem.mutexes.connection_mutex);	
 	int local_port;
 	p_mem->p_topology = (TopologyTable *) malloc(sizeof(TopologyTable));
 
@@ -78,18 +75,12 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 
 	pthread_t satan_kalous_thread;
 	pthread_create(&satan_kalous_thread, NULL, (void*) &satanKalous, (void*) p_mem);
-	
-	pthread_mutex_unlock(&p_mem.mutexes.connection_mutex);
-	pthread_mutex_unlock(&p_mem.mutexes.status_mutex);
-	pthread_mutex_unlock(&p_mem.mutexes.routing_mutex);
 
 	return SUCCESS;
 }
 
 void createRoutingTable (TopologyTable topology, int node_ID, NodeStatus* status_table, RoutingTable *routing_table)
 {
-	pthread_mutex_lock(&p_mem.mutexes.routing_mutex);
-	pthread_mutex_lock(&p_mem.mutexes.status_mutex);
 	Queue queue = (Queue) malloc((topology.nodes_count) * sizeof(QueueEntry));
 	//RoutingTable routing_table;
 	routing_table->table = (RoutingTableEntry*) malloc((topology.nodes_count+1) * sizeof(RoutingTableEntry));
@@ -157,9 +148,6 @@ void createRoutingTable (TopologyTable topology, int node_ID, NodeStatus* status
 	queue = NULL;
 
 	routing_table->table[idToIndex(node_ID)].next_hop_id = -1;
-
-	pthread_mutex_unlock(&p_mem.mutexes.status_mutex);
-	pthread_mutex_unlock(&p_mem.mutexes.routing_mutex);
 	//routing_table->table[idToIndex(node_ID)].next_hop_port = -1;
 	//strcpy(routing_table->table[idToIndex(node_ID)].next_hop_ip, "none");
 
