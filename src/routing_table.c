@@ -59,7 +59,7 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 	for(i=0; i<MAX_NODES; i++){
 		time_t tm = time(NULL);
 		p_mem->p_connections[i].type = 0;
-		p_mem->p_connections[i].id = 0;
+		p_mem->p_connections[i].id = -1;
 		p_mem->p_connections[i].addr = NULL;
 		p_mem->p_connections[i].sockfd = -1;
 		p_mem->p_connections[i].last_seen = tm;
@@ -83,14 +83,14 @@ void createRoutingTable (TopologyTable topology, int node_ID, NodeStatus* status
 {
 	Queue queue = (Queue) malloc((topology.nodes_count) * sizeof(QueueEntry));
 	//RoutingTable routing_table;
-	routing_table->table = (RoutingTableEntry*) malloc((topology.nodes_count) * sizeof(RoutingTableEntry));
+	routing_table->table = (RoutingTableEntry*) malloc((topology.nodes_count+1) * sizeof(RoutingTableEntry));
 	routing_table->size = topology.nodes_count;
 	int visited_nodes, i, last;
 	last = 0;
 	visited_nodes = 0;
 
 
-	for(i=0; i<topology.nodes_count;i++){
+	for(i=0; i<topology.nodes_count+1;i++){
 		//RoutingTableEntry no_path;
 		//no_path.next_hop_port = -1;
 		//no_path.next_hop_id = -1;
