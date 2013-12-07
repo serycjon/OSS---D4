@@ -9,6 +9,7 @@
 
 char *formDDPacket(NodeStatus *state_table, int *len)
 {
+	pthread_mutex_lock(&p_mem.mutexes.status_mutex);	
 	uint32_t mask = 1 << 31; // only MSB is set
 	uint32_t bit_field[8]; // we need 8*32 bits
 	int i, bit_field_index, int_index;
@@ -32,6 +33,7 @@ char *formDDPacket(NodeStatus *state_table, int *len)
 		msg[1+(i*4)] = htonl(bit_field[i]);
 	}
 	*len = 8*4 + 1;
+	pthread_mutex_unlock(&p_mem.mutexes.status_mutex);
 	return msg;
 }
 
@@ -128,6 +130,7 @@ void parseMsg(struct mem_and_buffer_and_sfd *params)
 
 void parseHello(struct mem_and_buffer_and_sfd *params)
 {
+	pthread_mutex_lock(&p_mem.mutexes.connection_mutex);	
 	int len = params->len;
 	char *buf = params->buf;
 
@@ -149,10 +152,12 @@ void parseHello(struct mem_and_buffer_and_sfd *params)
 
 	//printf("HELLO from %d!\n", source_id);
 	//free(params);
+	pthread_mutex_unlock(&p_mem.mutexes.connection_mutex);
 }
 
 void parseNSU(struct mem_and_buffer_and_sfd *params)
 {
+	pthread_mutex_lock(&p_mem.mutexes.status_mutex);	
 	//printf("received NSU\n");
 	int len = params->len;
 	char *buf = params->buf;
@@ -168,6 +173,7 @@ void parseNSU(struct mem_and_buffer_and_sfd *params)
 		reactToStateChange(id, new_state, params->mem);
 	}
 	//free(params);
+	pthread_mutex_unlock(&p_mem.mutexes.counting_mutex);
 }
 
 void parseDD(struct mem_and_buffer_and_sfd *params)

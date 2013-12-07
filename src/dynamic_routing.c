@@ -122,6 +122,7 @@ int inInit(void* mem)
 
 void outInit(struct shared_mem *mem, Connections out_conns)
 {
+	pthread_mutex_lock(&p_mem.mutexes.connection_mutex);	
 	int i;
 	struct addrinfo hints;
 
@@ -202,7 +203,7 @@ void outInit(struct shared_mem *mem, Connections out_conns)
 		rc->last_seen = clock();
 		rc->online = OFFLINE;
 
-
+	pthread_mutex_unlock(&p_mem.mutexes.connection_mutex);
 
 	}
 }
@@ -293,6 +294,8 @@ void satanKalous(void *param)
 
 void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 {
+	pthread_mutex_lock(&p_mem.mutexes.routing_mutex);
+	pthread_mutex_lock(&p_mem.mutexes.connection_mutex);
 	if(mem->p_status_table[id]==new_state) return;
 	if(new_state == ONLINE){
 		printf("NODE %d WENT ONLINE!\n", id);
@@ -321,6 +324,8 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 	printf("ROUTING TABLE UPDATED!!!\n");
 	showRoutingTable(mem);
 #endif
+	pthread_mutex_unlock(&p_mem.mutexes.connection_mutex);	
+	pthread_mutex_unlock(&p_mem.mutexes.routing_mutex);
 }
 
 void sendNSU(int id, int new_state, struct shared_mem *mem)
@@ -332,6 +337,7 @@ void sendNSU(int id, int new_state, struct shared_mem *mem)
 
 void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *mem)
 {
+	pthread_mutex_lock(&p_mem.mutexes.connection_mutex);	
 	int id;
 	struct real_connection *conns = mem->p_connections;
 	for(id=0; id<MAX_NODES; id++){
@@ -355,10 +361,13 @@ void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *mem)
 		}
 	}
 	//printf("everything sent\n");
+	pthread_mutex_unlock(&p_mem.mutexes.connection_mutex);
 }
 
 void sendToId(int dest_id, char *packet, int len, struct shared_mem *mem)
 {
+	pthread_mutex_lock(&p_mem.mutexes.routing_mutex);	// pridat p_mem!!!
+	pthread_mutex_lock(&p_mem.mutexes.connection_mutex);
 	if(dest_id >= mem->p_topology->nodes_count){
 		printf("cannot reach node %d\n", dest_id);
 		return;
@@ -380,4 +389,6 @@ void sendToId(int dest_id, char *packet, int len, struct shared_mem *mem)
 		addr_len = sizeof(*(conns[next_id].addr));
 		sendto(conns[next_id].sockfd, packet, len, 0, conns[next_id].addr, addr_len);
 	}
+	pthread_mutex_unlock(&p_mem.mutexes.connection_mutex);
+	pthread_mutex_unlock(&p_mem.mutexes.routing_mutex);
 }
