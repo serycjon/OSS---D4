@@ -6,8 +6,9 @@
 #include "dynamic_routing.h"
 #include "packets.h"
 #include "main.h"
+#include <pthread.h>
 
-char *formDDPacket(NodeStatus *state_table, int *len)
+char *formDDPacket(struct shared_mem *p_mem, int *len)
 {	
 	uint32_t mask = 1 << 31; // only MSB is set
 	uint32_t bit_field[8]; // we need 8*32 bits
@@ -17,13 +18,13 @@ char *formDDPacket(NodeStatus *state_table, int *len)
 	}
 
 	for(i=0; i < 256; i++){
-		pthread_mutex_lock(&p_mem->mutexes.status_mutex);
-		if(state_table == ONLINE){
+		pthread_mutex_lock(&p_mem->mutexes->status_mutex);
+		if(p_mem->p_status_table == ONLINE){
 			bit_field_index = i/32;
 			int_index = i%32;
 			bit_field[bit_field_index] |= mask >> int_index;
 		}
-		pthread_mutex_unlock(&p_mem->mutexes.status_mutex);
+		pthread_mutex_unlock(&p_mem->mutexes->status_mutex);
 	}
 
 	//printf("bits of first part %u\n", bit_field[0]);
@@ -137,8 +138,7 @@ void parseHello(struct mem_and_buffer_and_sfd *params)
 		printf("INVALID hello size!\n");
 	}
 	int source_id = (int)buf[1];
-	//printf("Got hello from %d\n", source_id);
-	pthread_mutex_lock(&p_mem->mutexes.connection_mutex);	
+	//printf("Got hello from %d\n", source_id);	
 	struct real_connection *conn = &(params->mem->p_connections[source_id]);
 	conn->type = IN_CONN;
 	conn->id = source_id;
@@ -146,7 +146,6 @@ void parseHello(struct mem_and_buffer_and_sfd *params)
 	conn->sockfd = params->sfd;
 	conn->last_seen = time(NULL);
 	conn->online = ONLINE;
-	pthread_mutex_unlock(&p_mem->mutexes.connection_mutex);
 	//if(conn->online==OFFLINE){
 	reactToStateChange(source_id, ONLINE, params->mem);
 	//}

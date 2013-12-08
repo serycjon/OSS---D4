@@ -12,11 +12,11 @@ struct shared_mem {
 	TopologyTable *p_topology;
 	RoutingTable *p_routing_table;
 	NodeStatus *p_status_table;
-	struct mutexes;
+	struct all_mutexes *mutexes;
 };
 
 
-struct mutexes {
+struct all_mutexes {
 	pthread_mutex_t routing_mutex;
 	pthread_mutex_t status_mutex;
 	pthread_mutex_t connection_mutex;
