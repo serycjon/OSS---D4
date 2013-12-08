@@ -109,8 +109,8 @@ void packetParser(void *parameter)
 	}
 	if(params->len < 1){
 		printf("PACKET of zero length!!\n");
-		free(params->buf);
-		params->buf = NULL;
+		//free(params->buf);
+		//params->buf = NULL;
 		return;
 	}
 
@@ -134,8 +134,8 @@ void packetParser(void *parameter)
 		default:
 			printf("INVALID TYPE!!! (%d)\n", type);
 	}
-	free(params->buf);
-	params->buf = NULL;
+	//free(params->buf);
+	//params->buf = NULL;
 	//free(parameter);
 }
 
@@ -274,5 +274,5 @@ void parseDDR(struct mem_and_buffer_and_sfd *params)
 	int dd_len;
 	char *dd = formDDPacket(params->mem, &dd_len);
 	sendToNeighbour(source_id, dd, dd_len, params->mem);
-	free(dd);
+	//free(dd);
 }
