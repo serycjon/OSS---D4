@@ -98,6 +98,8 @@ int inInit(void* mem)
 		//printf("numbytes: %zd\n", numbytes);
 
 		// we have to deepcopy sockaddr so it doesnt get overwritten
+		//
+		// FREE IT!
 		struct sockaddr *addr_cpy = (struct sockaddr *) malloc(sizeof(struct sockaddr));
 		addr_cpy->sa_family = ((struct sockaddr *)&their_addr)->sa_family;
 		memcpy(addr_cpy->sa_data, ((struct sockaddr *)&their_addr)->sa_data, sizeof(((struct sockaddr *)&their_addr)->sa_data));
