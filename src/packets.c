@@ -200,18 +200,26 @@ void parseDD(struct mem_and_buffer_and_sfd *params)
 		printf("INVALID DD length! (%d)\n", len);
 	}
 	int i, found, int_index;
+	int changed = 0;
 	for(i=0; i < 8;   i++){
 		bit_field[i] = ntohl(*(buf+1+i*4));
-		
+
 		for(int_index = 31; int_index > 0; int_index--){
 			if((bit_field[i]>>int_index & 1) == 1){
 				found = i*32 +31- int_index;
 				printf("according to DD %d is ONLINE\n", found);
 				if(params->mem->p_status_table[found] == OFFLINE){
-					reactToStateChange(found, ONLINE, params->mem);
+					//reactToStateChange(found, ONLINE, params->mem);
+
+					changed++;
+					params->mem->p_status_table[found] = ONLINE;
+					sendNSU(found, ONLINE, params->mem);
 				}
 			}
 		}
 	}
-
+	RoutingTable *new_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
+	createRoutingTable (*(params->mem->p_topology), params->mem->local_id, params->mem->p_status_table, new_routing_table);
+	//RoutingTable *old_routing_table = mem->p_routing_table;
+	params->mem->p_routing_table = new_routing_table;
 }
