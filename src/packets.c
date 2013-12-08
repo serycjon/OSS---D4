@@ -125,7 +125,7 @@ void packetParser(void *parameter)
 			parseDDR(params);
 			break;
 		default:
-			printf("INVALID TYPE!!!\n");
+			printf("INVALID TYPE!!! (%d)\n", type);
 	}
 	free(params->buf);
 	params->buf = NULL;
