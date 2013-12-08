@@ -87,7 +87,7 @@ char *formHelloPacket(int id, int *len)
 
 char *formMsgPacket(int source_id, int dest_id, char* text, int *len)
 {
-	char *msg = (char *) malloc(BUF_SIZE*sizeof(char));
+	char *msg = (char *) calloc(BUF_SIZE, sizeof(char));
 	msg[0] = T_MSG;
 	msg[1] = (u_char) dest_id;
 	msg[2] = (u_char) source_id;
