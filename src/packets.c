@@ -218,8 +218,10 @@ void parseDD(struct mem_and_buffer_and_sfd *params)
 			}
 		}
 	}
-	RoutingTable *new_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
-	createRoutingTable (*(params->mem->p_topology), params->mem->local_id, params->mem->p_status_table, new_routing_table);
-	//RoutingTable *old_routing_table = mem->p_routing_table;
-	params->mem->p_routing_table = new_routing_table;
+	if(changed>0){
+		RoutingTable *new_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
+		createRoutingTable (*(params->mem->p_topology), params->mem->local_id, params->mem->p_status_table, new_routing_table);
+		//RoutingTable *old_routing_table = mem->p_routing_table;
+		params->mem->p_routing_table = new_routing_table;
+	}
 }
