@@ -84,7 +84,7 @@ void createRoutingTable (TopologyTable topology, int node_ID, NodeStatus* status
 	Queue queue = (Queue) malloc((topology.nodes_count) * sizeof(QueueEntry));
 	//RoutingTable routing_table;
 	routing_table->table = (RoutingTableEntry*) malloc((topology.nodes_count+1) * sizeof(RoutingTableEntry));
-	routing_table->size = topology.nodes_count;
+	routing_table->size = topology.nodes_count+1;
 	int visited_nodes, i, last;
 	last = 0;
 	visited_nodes = 0;
