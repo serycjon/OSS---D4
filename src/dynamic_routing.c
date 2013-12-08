@@ -185,10 +185,12 @@ void outInit(struct shared_mem *mem, Connections out_conns)
 		   datagrams, and read responses from server */
 		//printf("created socket: %d\n", sfd);
 
+		pthread_mutex_lock(&(mem->mutexes->connection_mutex));
 		struct mem_and_sfd *param;
 		param = (struct mem_and_sfd*) malloc(sizeof(struct mem_and_sfd));
 		param->sfd = sfd;
 		param->mem = mem;
+		pthread_mutex_unlock(&(mem->mutexes->connection_mutex));
 
 		pthread_t listen_thread;
 		pthread_create(&listen_thread, NULL, (void*) &sockListener, (void*) param);
@@ -198,15 +200,15 @@ void outInit(struct shared_mem *mem, Connections out_conns)
 
 		// printf("debug: %d\n", out_conns.array[i].id);
 		// printf("dalsi: %d\n", mem->p_routing_table->table[4].next_hop_id);
+
+		pthread_mutex_lock(&(mem->mutexes->connection_mutex));		
 		struct real_connection *rc = &(mem->p_connections[out_conns.array[i].id]);
 		rc->type = OUT_CONN; // OUT connection
 		rc->id = out_conns.array[i].id;
 		rc->sockfd = sfd;
 		rc->last_seen = clock();
 		rc->online = OFFLINE;
-
-
-
+		pthread_mutex_unlock(&(mem->mutexes->connection_mutex));
 	}
 }
 
@@ -299,20 +301,32 @@ void satanKalous(void *param)
 
 void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 {
-	if(mem->p_status_table[id]==new_state) return;
+	pthread_mutex_lock(&(mem->mutexes->status_mutex));
+	if(mem->p_status_table[id]==new_state) {
+		pthread_mutex_unlock(&(mem->mutexes->status_mutex));
+		return;
+	}else {
+		pthread_mutex_unlock(&(mem->mutexes->status_mutex));
+	}
+
 	if(new_state == ONLINE){
 		printf("NODE %d WENT ONLINE!\n", id);
 	}else{
 		printf("NODE %d WENT OFFLINE!\n", id);
 	}
+	pthread_mutex_lock(&(mem->mutexes->status_mutex));
 	mem->p_status_table[id] = new_state;
+	pthread_mutex_unlock(&(mem->mutexes->status_mutex));
+
 #ifdef DEBUG
 	showStatusTable(mem->p_topology->nodes_count, mem->p_status_table);
 #endif
-	RoutingTable *new_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
-	createRoutingTable (*(mem->p_topology), mem->local_id, mem->p_status_table, new_routing_table);
+//	RoutingTable *new_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
+//	pthread_mutex_lock(&(mem->mutexes->routing_mutex));
+	createRoutingTable (mem);
 	//RoutingTable *old_routing_table = mem->p_routing_table;
-	mem->p_routing_table = new_routing_table;
+//	mem->p_routing_table = new_routing_table;	
+//	pthread_mutex_unlock(&(mem->mutexes->routing_mutex));
 
 	if(new_state == ONLINE && isNeighbour(mem->local_id, id, *(mem->p_topology))){
 		int len;
@@ -323,11 +337,15 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 
 	if(new_state == OFFLINE){
 		int i;
+		pthread_mutex_lock(&(mem->mutexes->routing_mutex));
 		for(i=0; i<mem->p_routing_table->size; i++){
 			if(i!=mem->local_id && mem->p_routing_table->table[i].next_hop_id == -1){
+				pthread_mutex_lock(&(mem->mutexes->status_mutex));				
 				mem->p_status_table[i] = OFFLINE;
+				pthread_mutex_unlock(&(mem->mutexes->status_mutex));
 			}
 		}
+		pthread_mutex_unlock(&(mem->mutexes->routing_mutex));
 	}
 	/* FREE AS A BIRD!!! */
 	//free(old_routing_table);
@@ -347,16 +365,21 @@ void sendNSU(int id, int new_state, struct shared_mem *mem)
 void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *p_mem)
 {
 	int id;
+	pthread_mutex_lock(&(p_mem->mutexes->connection_mutex));
 	struct real_connection *conns = p_mem->p_connections;
 	for(id=0; id<MAX_NODES; id++){
 		if(id != not_to && conns[id].id!=-1){
-			sendToNeighbour(id, packet, len, p_mem);	
+			pthread_mutex_unlock(&(p_mem->mutexes->connection_mutex));			
+			sendToNeighbour(id, packet, len, p_mem);
+			pthread_mutex_lock(&(p_mem->mutexes->connection_mutex));	
 		}
 	}
+	pthread_mutex_unlock(&(p_mem->mutexes->connection_mutex));
 }
 
 void sendToNeighbour(int dest_id, char *packet, int len, struct shared_mem *p_mem)
 {
+	//pthread_mutex_lock(&(p_mem->mutexes->connection_mutex));
 	struct real_connection *conns = p_mem->p_connections;
 	if(conns[dest_id].type == OUT_CONN){
 		sendto(conns[dest_id].sockfd, packet, len, 0, 0, 0);
@@ -365,22 +388,31 @@ void sendToNeighbour(int dest_id, char *packet, int len, struct shared_mem *p_me
 		addr_len = sizeof(*(conns[dest_id].addr));
 		sendto(conns[dest_id].sockfd, packet, len, 0, conns[dest_id].addr, addr_len);
 	}
+	//pthread_mutex_unlock(&(p_mem->mutexes->connection_mutex));
 }
 
 void sendToId(int dest_id, char *packet, int len, struct shared_mem *p_mem)
 {
+	pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));
 	if(dest_id >= p_mem->p_routing_table->size){
 		printf("cannot reach node %d\n", dest_id);
+		pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 		return;
+	}else{
+		pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 	}
 	if(dest_id == p_mem->local_id){
 		printf("why would you send anything to yourself!?!\n");
 		return;
 	}
+	pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));
 	int next_id = p_mem->p_routing_table->table[idToIndex(dest_id)].next_hop_id;
 	if(next_id==-1){
 		printf("cannot reach node %d\n", dest_id);
+		pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 		return;
+	}else{
+		pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 	}
 	sendToNeighbour(next_id, packet, len, p_mem);
 }

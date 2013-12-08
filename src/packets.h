@@ -9,7 +9,7 @@
 #define T_DDR 4
 
 char *formDDRequestPacket(int source_id, int *len);
-char *formDDPacket(NodeStatus *state_table, int *len);
+char *formDDPacket(struct shared_mem *p_mem, int *len);
 char *formNSUPacket(int id, int new_state, int *len);
 char *formHelloPacket(int id, int *len);
 char *formMsgPacket(int source_id, int dest_id, char* text, int *len);

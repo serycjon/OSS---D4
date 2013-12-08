@@ -29,7 +29,7 @@ typedef struct stack_entry {
 struct shared_mem;
 
 int initRouting(char* filename, int local_id, struct shared_mem *mem);
-void createRoutingTable (TopologyTable topology, int node_ID, NodeStatus* status_table, RoutingTable *p_routing_table);
+void createRoutingTable (struct shared_mem *mem);
 int idToIndex(int id);
 int indexToId(int id);
 void showRoutingTable(struct shared_mem *mem);
