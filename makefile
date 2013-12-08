@@ -16,4 +16,7 @@ man_sample: $(SRC)/samples/man_server.c $(SRC)/samples/man_client.c
 	gcc $(GCC_OPTIONS) $(SRC)/samples/man_server.c -o $(BIN)/man_server -lpthread
 	gcc $(GCC_OPTIONS) $(SRC)/samples/man_client.c -o $(BIN)/man_client -lpthread
 
+buffer: $(SRC)/buffer.c
+	gcc $(GCC_OPTIONS) $(SRC)/buffer.c -o $(BIN)/buffer
+
 clean: rm -rf *.o
