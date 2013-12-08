@@ -2,7 +2,7 @@
 #include <string.h>
 #include<stdio.h>
 
-#define RESEND_BUFFER_SIZE 4
+#define RESEND_BUFFER_SIZE 5
 
 typedef struct undelivered_message {
 	int dest_id;
@@ -39,15 +39,14 @@ void resendUndeliveredMessages(int to_id, struct shared_mem *mem){
 
 	while(*ptr != NULL){
 		if((*ptr)->dest_id == to_id){
-			showUndeliveredMessage(*ptr);
 			//send
-			/*
-			   UndeliveredMessage *next = ptr->next;
-			   free(ptr->message);
-			   free(ptr);
-			 *ptr = next;
-			 mem->buf_size--;
-			 */
+			printf("will delete this msg(sent): ");
+			showUndeliveredMessage(*ptr);
+			UndeliveredMessage *next = ((*ptr)->next);
+			   //free(ptr->message);
+			   //free(ptr);
+			*ptr = next;
+			mem->buf_size--;
 		}
 		ptr = &(*ptr)->next;
 	}
@@ -102,10 +101,11 @@ int main(){
 	char *msg3 = "cauky!";
 	char *msg4 = "jupii!";
 	//UndeliveredMessage *head = (UndeliveredMessage *)malloc(sizeof(UndeliveredMessage));
+	
 	addWaitingMessage(1, strlen(msg), msg, mem);
-	addWaitingMessage(2, strlen(msg2), msg2, mem);
 	addWaitingMessage(2, strlen(msg3), msg3, mem);
-	addWaitingMessage(4, strlen(msg4), msg4, mem);
+	addWaitingMessage(2, strlen(msg4), msg4, mem);
+	addWaitingMessage(2, strlen(msg2), msg2, mem);
 
 	//addWaitingMessage(1, strlen(msg), msg, mem);
 	showUndeliveredMessages(mem);
