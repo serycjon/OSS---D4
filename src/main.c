@@ -40,6 +40,7 @@ int main(int argc, char** argv)
 
 	struct shared_mem *p_mem = (struct shared_mem *) malloc(sizeof(struct shared_mem));
 	// Process the config file
+	p_mem->mutexes = (struct all_mutexes *) malloc(sizeof(struct all_mutexes));
 	pthread_mutex_init(&p_mem->mutexes->routing_mutex, NULL);
 	pthread_mutex_init(&p_mem->mutexes->status_mutex, NULL);
 	pthread_mutex_init(&p_mem->mutexes->connection_mutex, NULL);
