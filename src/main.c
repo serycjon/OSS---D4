@@ -63,11 +63,14 @@ void startInterface(struct shared_mem *mem)
 		if(sscanf(buffer, "%d %[^\n]s", &dest_id, msg) == 2){  // notice [^\n]... scanf can read even strings with spaces! :)
 #ifdef DEBUG
 			printf("dest_id: %d; msg: %s\n", dest_id, msg);
+			if(strlen(msg)==0) continue;
 #endif
 			char *packet = formMsgPacket(mem->local_id, dest_id, msg, &len);
 			sendToId(dest_id, packet, len, mem);
 		}else if(strcmp("routable\n", buffer) == 0){
 			showRoutingTable(mem);
+		}else if(strcmp("statable\n", buffer) == 0){
+			showStatusTable(mem->p_topology->nodes_count, mem->p_status_table);
 		}else{
 			printf("[ERROR] wrong format!\n"
 					"please enter the destination ID and then your message.\n");

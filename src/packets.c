@@ -6,10 +6,31 @@
 #include "dynamic_routing.h"
 #include "packets.h"
 #include "main.h"
+#include "topology.h"
 #include <pthread.h>
 
+void printbincharpad(char c)
+{
+	int i;
+	for (i = 7; i >= 0; --i)
+	{
+		putchar( (c & (1 << i)) ? '1' : '0' );
+	}
+	putchar('\n');
+}
+
+char *formDDRequestPacket(int source_id, int *len)
+{
+	char *msg = (char *) malloc(2*sizeof(char));
+	msg[0] = T_DDR;
+	msg[1] = (char) source_id;
+	*len = 2; //strlen(msg+1)+sizeof(char);
+	return msg;
+}
+
 char *formDDPacket(struct shared_mem *p_mem, int *len)
-{	
+{
+	NodeStatus *state_table = p_mem->p_status_table;
 	uint32_t mask = 1 << 31; // only MSB is set
 	uint32_t bit_field[8]; // we need 8*32 bits
 	int i, bit_field_index, int_index;
@@ -17,9 +38,9 @@ char *formDDPacket(struct shared_mem *p_mem, int *len)
 		bit_field[i] = 0; // better safe than sorry. probably isn't necessary
 	}
 
-	for(i=0; i < 256; i++){
+	for(i=0; i < MAX_NODES+1; i++){
 		pthread_mutex_lock(&(p_mem->mutexes->status_mutex));
-		if(p_mem->p_status_table == ONLINE){
+		if(state_table[i] == ONLINE){
 			bit_field_index = i/32;
 			int_index = i%32;
 			bit_field[bit_field_index] |= mask >> int_index;
@@ -27,14 +48,17 @@ char *formDDPacket(struct shared_mem *p_mem, int *len)
 		pthread_mutex_unlock(&(p_mem->mutexes->status_mutex));
 	}
 
+
 	//printf("bits of first part %u\n", bit_field[0]);
 
-	char *msg = (char *) malloc(sizeof(char) + 8*sizeof(uint32_t));
+	char *msg = (char *) calloc(33, sizeof(char));
 	msg[0] = T_DD;
 	for(i=0; i<8; i++){
-		msg[1+(i*32)] = htonl(bit_field[i]);
+		int index = 1+(i*4);
+		//*(msg+index) = bit_field[i];
+		*(msg+index) = htonl(bit_field[i]);
 	}
-	*len = 8*32 + 1;
+	*len = 8*4 + 1;
 	return msg;
 }
 
@@ -99,8 +123,11 @@ void packetParser(void *parameter)
 		case T_DD:
 			parseDD(params);
 			break;
+		case T_DDR:
+			parseDDR(params);
+			break;
 		default:
-			printf("INVALID TYPE!!!\n");
+			printf("INVALID TYPE!!! (%d)\n", type);
 	}
 	free(params->buf);
 	params->buf = NULL;
@@ -110,6 +137,10 @@ void packetParser(void *parameter)
 void parseMsg(struct mem_and_buffer_and_sfd *params)
 {
 	char *buf = params->buf;
+	if(params->len < 4 || params->buf==NULL){
+		printf("packet too short\n");
+		return;
+	}
 
 	int dest_id = (int)buf[1];
 	int source_id = (int)buf[2];
@@ -130,7 +161,7 @@ void parseMsg(struct mem_and_buffer_and_sfd *params)
 }
 
 void parseHello(struct mem_and_buffer_and_sfd *params)
-{	
+{
 	int len = params->len;
 	char *buf = params->buf;
 
@@ -138,7 +169,7 @@ void parseHello(struct mem_and_buffer_and_sfd *params)
 		printf("INVALID hello size!\n");
 	}
 	int source_id = (int)buf[1];
-	//printf("Got hello from %d\n", source_id);	
+	//printf("Got hello from %d\n", source_id);
 	struct real_connection *conn = &(params->mem->p_connections[source_id]);
 	conn->type = IN_CONN;
 	conn->id = source_id;
@@ -167,7 +198,7 @@ void parseNSU(struct mem_and_buffer_and_sfd *params)
 	int id = (int)buf[1];
 	int new_state = (int)buf[2];
 
-	if(params->mem->p_status_table[id]!=new_state){
+	if(params->mem->p_status_table[id]!=new_state && !isNeighbour(params->mem->local_id, id, *(params->mem->p_topology))){
 		printf("I have heard that node %d has changed its state!\n", id);
 		reactToStateChange(id, new_state, params->mem);
 	}
@@ -177,6 +208,58 @@ void parseNSU(struct mem_and_buffer_and_sfd *params)
 
 void parseDD(struct mem_and_buffer_and_sfd *params)
 {
-	printf("received DD\n");
-	//free(params);
+	uint32_t bit_field[8]; // we need 8*32 bits
+	int len = params->len;
+	char *buf = params->buf;
+
+	printf("received DD packet\n");
+	if(len!=33*sizeof(char)){
+		printf("INVALID DD length! (%d)\n", len);
+	}
+	int i, found, int_index;
+	int changed = 0;
+	for(i=0; i < 8;   i++){
+		bit_field[i] = ntohl(*(buf+1+i*4));
+
+		for(int_index = 31; int_index > 0; int_index--){
+			if((bit_field[i]>>int_index & 1) == 1){
+				found = i*32 +31- int_index;
+				if(params->mem->p_status_table[found] == OFFLINE){
+				       if(!isNeighbour(params->mem->local_id, found, *(params->mem->p_topology))){
+					       //reactToStateChange(found, ONLINE, params->mem);
+					       printf("according to DD %d is ONLINE\n", found);
+					       changed++;
+					       params->mem->p_status_table[found] = ONLINE;
+					       //sleep(1);
+					       sendNSU(found, ONLINE, params->mem);
+				       }else if(params->mem->p_connections[found].online == OFFLINE){
+					       sendNSU(found, OFFLINE, params->mem);
+				       }
+				}
+			}
+		}
+	}
+	if(changed>0){
+		//RoutingTable *new_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
+		createRoutingTable (params->mem);
+		//RoutingTable *old_routing_table = mem->p_routing_table;
+		//params->mem->p_routing_table = new_routing_table;
+	}
+}
+
+void parseDDR(struct mem_and_buffer_and_sfd *params)
+{
+	//printf("received DDR\n");
+	int len = params->len;
+	char *buf = params->buf;
+
+	if(len!=2*sizeof(char)){
+		printf("INVALID DDR length!\n");
+	}
+	int source_id = (int)buf[1];
+
+	int dd_len;
+	char *dd = formDDPacket(params->mem, &dd_len);
+	sendToNeighbour(source_id, dd, dd_len, params->mem);
+	free(dd);
 }

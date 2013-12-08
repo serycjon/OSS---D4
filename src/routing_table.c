@@ -10,7 +10,7 @@
 #include "main.h"
 
 int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
-{	
+{
 	int local_port;
 	p_mem->p_topology = (TopologyTable *) malloc(sizeof(TopologyTable));
 
@@ -75,17 +75,16 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 
 	pthread_t satan_kalous_thread;
 	pthread_create(&satan_kalous_thread, NULL, (void*) &satanKalous, (void*) p_mem);
-	
+
 	return SUCCESS;
 }
 
 void createRoutingTable (struct shared_mem *p_mem)
 {
 	Queue queue = (Queue) malloc((p_mem->p_topology->nodes_count) * sizeof(QueueEntry));
-	//RoutingTable routing_table;
 //	pthread_mutex_lock(p_mem->mutexes.routing_mutex);
 	p_mem->p_routing_table->table = (RoutingTableEntry*) malloc((p_mem->p_topology->nodes_count+1) * sizeof(RoutingTableEntry));
-	p_mem->p_routing_table->size = p_mem->p_topology->nodes_count;
+	p_mem->p_routing_table->size = p_mem->p_topology->nodes_count+1;
 //	pthread_mutex_unlock(p_mem->mutexes.routing_mutex);
 	int visited_nodes, i, last;
 	last = 0;
@@ -97,7 +96,7 @@ void createRoutingTable (struct shared_mem *p_mem)
 		//no_path.next_hop_port = -1;
 		//no_path.next_hop_id = -1;
 		//strcpy(no_path.next_hop_ip, "none");
-		p_mem->p_routing_table->table[i].next_hop_id = -1;
+		p_mem->p_routing_table->table[i].next_hop_id = NOT_VISITED;
 	}
 //	pthread_mutex_unlock(p_mem->mutexes.routing_mutex);
 
@@ -113,8 +112,8 @@ void createRoutingTable (struct shared_mem *p_mem)
 		int new_node_ID  = indexToId(p_mem->p_topology->table[idToIndex(p_mem->local_id)][i]);
 //		pthread_mutex_lock(p_mem->mutexes.status_mutex);		
 //		pthread_mutex_lock(p_mem->mutexes.routing_mutex);
-		if(p_mem->p_status_table[idToIndex(new_node_ID)] == ONLINE&&
-				p_mem->p_routing_table->table[idToIndex(new_node_ID)].next_hop_id == -1){
+		if(p_mem->p_status_table[idToIndex(new_node_ID)] == ONLINE &&
+				p_mem->p_routing_table->table[idToIndex(new_node_ID)].next_hop_id == NOT_VISITED){
 			QueueEntry new;
 			RoutingTableEntry new_entry; //add IP and port!
 			new_entry.next_hop_id = new_node_ID;
@@ -137,7 +136,7 @@ void createRoutingTable (struct shared_mem *p_mem)
 			int new_node_ID  = indexToId(p_mem->p_topology->table[idToIndex(actual_node_ID)][i]);
 //			pthread_mutex_lock(p_mem->mutexes.status_mutex);
 //			pthread_mutex_lock(p_mem->mutexes.routing_mutex);		
-			if(p_mem->p_routing_table->table[idToIndex(new_node_ID)].next_hop_id == -1 && p_mem->p_status_table[idToIndex(new_node_ID)] == ONLINE){
+			if(p_mem->p_routing_table->table[idToIndex(new_node_ID)].next_hop_id == NOT_VISITED && p_mem->p_status_table[idToIndex(new_node_ID)] == ONLINE){
 #ifdef DEBUG
 				printf("debug: discovered it's neighbor %d\n", new_node_ID);
 #endif
@@ -160,7 +159,7 @@ void createRoutingTable (struct shared_mem *p_mem)
 	queue = NULL;
 	
 //	pthread_mutex_lock(p_mem->mutexes.routing_mutex);
-	p_mem->p_routing_table->table[idToIndex(p_mem->local_id)].next_hop_id = -1;
+	p_mem->p_routing_table->table[idToIndex(p_mem->local_id)].next_hop_id = NOT_VISITED;
 //	pthread_mutex_unlock(p_mem->mutexes.routing_mutex);
 
 	//routing_table->table[idToIndex(p_mem->locad_ID)].next_hop_port = -1;
@@ -208,7 +207,7 @@ void showStatusTable(int status_table_size, NodeStatus* status_table)
 	printf("-----------\n");
 //	pthread_mutex_lock(p_mem->mutexes.status_mutex);  is it nescessary?
 	int i;
-	for(i=0; i<status_table_size; i++){
+	for(i=MIN_ID; i<status_table_size+1; i++){
 		if(status_table[i] == ONLINE){
 			printf("node %d is ONLINE\n", indexToId(i));
 		}else{

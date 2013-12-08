@@ -26,6 +26,7 @@ void satanKalous(void *param);
 void reactToStateChange(int id, int new_state, struct shared_mem *mem);
 void sendNSU(int id, int new_state, struct shared_mem *mem);
 void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *mem);
+void sendToNeighbour(int dest_id, char *packet, int len, struct shared_mem *p_mem);
 void sendToId(int id, char *packet, int len, struct shared_mem *mem);
 
 

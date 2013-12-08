@@ -5,6 +5,7 @@
 #include "topology.h"
 #include "route_cfg_parser.h"
 
+#define NOT_VISITED -1
 typedef enum {
 	ONLINE,
 	OFFLINE
