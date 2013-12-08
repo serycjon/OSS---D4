@@ -207,6 +207,9 @@ void parseDD(struct mem_and_buffer_and_sfd *params)
 			if((bit_field[i]>>int_index & 1) == 1){
 				found = i*32 +31- int_index;
 				printf("according to DD %d is ONLINE\n", found);
+				if(params->mem->p_status_table[found] == OFFLINE){
+					reactToStateChange(found, ONLINE, params->mem);
+				}
 			}
 		}
 	}
