@@ -18,6 +18,15 @@ void printbincharpad(char c)
 	putchar('\n');
 }
 
+char *formDDRequestPacket(int source_id, int *len)
+{
+	char *msg = (char *) malloc(2*sizeof(char));
+	msg[0] = T_DDR;
+	msg[1] = (char) source_id;
+	*len = 2; //strlen(msg+1)+sizeof(char);
+	return msg;
+}
+
 char *formDDPacket(NodeStatus *state_table, int *len)
 {
 	uint32_t mask = 1 << 31; // only MSB is set
@@ -111,6 +120,9 @@ void packetParser(void *parameter)
 			break;
 		case T_DD:
 			parseDD(params);
+			break;
+		case T_DDR:
+			parseDDR(params);
 			break;
 		default:
 			printf("INVALID TYPE!!!\n");
@@ -229,4 +241,21 @@ void parseDD(struct mem_and_buffer_and_sfd *params)
 		//RoutingTable *old_routing_table = mem->p_routing_table;
 		params->mem->p_routing_table = new_routing_table;
 	}
+}
+
+void parseDDR(struct mem_and_buffer_and_sfd *params)
+{
+	//printf("received DDR\n");
+	int len = params->len;
+	char *buf = params->buf;
+
+	if(len!=2*sizeof(char)){
+		printf("INVALID DDR length!\n");
+	}
+	int source_id = (int)buf[1];
+
+	int dd_len;
+	char *dd = formDDPacket(params->mem->p_status_table, &dd_len);
+	sendToNeighbour(source_id, dd, dd_len, params->mem);
+	free(dd);
 }

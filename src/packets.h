@@ -6,7 +6,9 @@
 #define T_HELLO 1
 #define T_NSU 2
 #define T_DD 3
+#define T_DDR 4
 
+char *formDDRequestPacket(int source_id, int *len);
 char *formDDPacket(NodeStatus *state_table, int *len);
 char *formNSUPacket(int id, int new_state, int *len);
 char *formHelloPacket(int id, int *len);
@@ -17,5 +19,6 @@ void parseMsg(struct mem_and_buffer_and_sfd *params);
 void parseHello(struct mem_and_buffer_and_sfd *params);
 void parseNSU(struct mem_and_buffer_and_sfd *params);
 void parseDD(struct mem_and_buffer_and_sfd *params);
+void parseDDR(struct mem_and_buffer_and_sfd *params);
 
 #endif
