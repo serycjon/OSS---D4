@@ -42,13 +42,14 @@ void resendUndeliveredMessages(int to_id, struct shared_mem *mem){
 			//send
 			printf("will delete this msg(sent): ");
 			showUndeliveredMessage(*ptr);
-			UndeliveredMessage *next = ((*ptr)->next);
-			   //free(ptr->message);
-			   //free(ptr);
-			*ptr = next;
+			UndeliveredMessage *old = ((*ptr));
+			*ptr = (*ptr)->next;
+			free(old->message);
+			free(old);
 			mem->buf_size--;
+		}else{
+			ptr = &(*ptr)->next;
 		}
-		ptr = &(*ptr)->next;
 	}
 }
 
@@ -102,9 +103,9 @@ int main(){
 	char *msg4 = "jupii!";
 	//UndeliveredMessage *head = (UndeliveredMessage *)malloc(sizeof(UndeliveredMessage));
 	
+	addWaitingMessage(2, strlen(msg4), msg4, mem);
 	addWaitingMessage(1, strlen(msg), msg, mem);
 	addWaitingMessage(2, strlen(msg3), msg3, mem);
-	addWaitingMessage(2, strlen(msg4), msg4, mem);
 	addWaitingMessage(2, strlen(msg2), msg2, mem);
 
 	//addWaitingMessage(1, strlen(msg), msg, mem);
