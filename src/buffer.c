@@ -34,18 +34,20 @@ void showUndeliveredMessages(struct shared_mem *mem){
 }
 
 void resendUndeliveredMessages(int to_id, struct shared_mem *mem){
-	UndeliveredMessage *ptr = mem->buffer;
-	UndeliveredMessage *prev = mem->buffer;
+	UndeliveredMessage **ptr = &(mem->buffer);
 
 
-	while(ptr != NULL){
-		if(ptr->dest_id == to_id){
+	while(*ptr != NULL){
+		if((*ptr)->dest_id == to_id){
+			showUndeliveredMessage(*ptr);
 			//send
-			UndeliveredMessage *next = ptr->next;
-			free(ptr->message);
-			free(ptr);
-			*ptr = next;
-			mem->buf_size--;
+			/*
+			   UndeliveredMessage *next = ptr->next;
+			   free(ptr->message);
+			   free(ptr);
+			 *ptr = next;
+			 mem->buf_size--;
+			 */
 		}
 		ptr = &(*ptr)->next;
 	}
@@ -104,9 +106,10 @@ int main(){
 	addWaitingMessage(2, strlen(msg2), msg2, mem);
 	addWaitingMessage(2, strlen(msg3), msg3, mem);
 	addWaitingMessage(4, strlen(msg4), msg4, mem);
-	
+
 	//addWaitingMessage(1, strlen(msg), msg, mem);
 	showUndeliveredMessages(mem);
 	resendUndeliveredMessages(2, mem);
 	showUndeliveredMessages(mem);
+	return 0;
 }
