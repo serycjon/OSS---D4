@@ -315,7 +315,7 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 	mem->p_routing_table = new_routing_table;
 
 	if(new_state == ONLINE){
-		// 	sleep(1);
+		sleep(3);
 		int len;
 		char *packet = formDDPacket(mem->p_status_table, &len);
 		sendToId(id, packet, len, mem);
