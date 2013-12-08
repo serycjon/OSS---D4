@@ -18,13 +18,13 @@ char *formDDPacket(struct shared_mem *p_mem, int *len)
 	}
 
 	for(i=0; i < 256; i++){
-		pthread_mutex_lock(&p_mem->mutexes->status_mutex);
+		pthread_mutex_lock(&(p_mem->mutexes->status_mutex));
 		if(p_mem->p_status_table == ONLINE){
 			bit_field_index = i/32;
 			int_index = i%32;
 			bit_field[bit_field_index] |= mask >> int_index;
 		}
-		pthread_mutex_unlock(&p_mem->mutexes->status_mutex);
+		pthread_mutex_unlock(&(p_mem->mutexes->status_mutex));
 	}
 
 	//printf("bits of first part %u\n", bit_field[0]);
@@ -156,7 +156,7 @@ void parseHello(struct mem_and_buffer_and_sfd *params)
 
 void parseNSU(struct mem_and_buffer_and_sfd *params)
 {
-	//pthread_mutex_lock(&p_mem.mutexes.status_mutex);
+	//pthread_mutex_lock(p_mem.mutexes.status_mutex);
 	//printf("received NSU\n");
 	int len = params->len;
 	char *buf = params->buf;
@@ -172,7 +172,7 @@ void parseNSU(struct mem_and_buffer_and_sfd *params)
 		reactToStateChange(id, new_state, params->mem);
 	}
 	//free(params);
-	//pthread_mutex_unlock(&p_mem.mutexes.counting_mutex);
+	//pthread_mutex_unlock(p_mem.mutexes.counting_mutex);
 }
 
 void parseDD(struct mem_and_buffer_and_sfd *params)
