@@ -7,6 +7,7 @@
 #include "packets.h"
 #include "main.h"
 #include "topology.h"
+#include <pthread.h>
 
 void printbincharpad(char c)
 {
@@ -27,8 +28,9 @@ char *formDDRequestPacket(int source_id, int *len)
 	return msg;
 }
 
-char *formDDPacket(NodeStatus *state_table, int *len)
+char *formDDPacket(struct shared_mem *p_mem, int *len)
 {
+	NodeStatus *state_table = p_mem->p_status_table;
 	uint32_t mask = 1 << 31; // only MSB is set
 	uint32_t bit_field[8]; // we need 8*32 bits
 	int i, bit_field_index, int_index;
@@ -37,12 +39,13 @@ char *formDDPacket(NodeStatus *state_table, int *len)
 	}
 
 	for(i=0; i < MAX_NODES+1; i++){
+		pthread_mutex_lock(&(p_mem->mutexes->status_mutex));
 		if(state_table[i] == ONLINE){
-			//printf("neco tu mame!\n");
 			bit_field_index = i/32;
 			int_index = i%32;
 			bit_field[bit_field_index] |= mask >> int_index;
 		}
+		pthread_mutex_unlock(&(p_mem->mutexes->status_mutex));
 	}
 
 
@@ -55,7 +58,6 @@ char *formDDPacket(NodeStatus *state_table, int *len)
 		//*(msg+index) = bit_field[i];
 		*(msg+index) = htonl(bit_field[i]);
 	}
-	//printbincharpad(msg[1]);
 	*len = 8*4 + 1;
 	return msg;
 }
@@ -185,6 +187,7 @@ void parseHello(struct mem_and_buffer_and_sfd *params)
 
 void parseNSU(struct mem_and_buffer_and_sfd *params)
 {
+	//pthread_mutex_lock(p_mem.mutexes.status_mutex);
 	//printf("received NSU\n");
 	int len = params->len;
 	char *buf = params->buf;
@@ -200,6 +203,7 @@ void parseNSU(struct mem_and_buffer_and_sfd *params)
 		reactToStateChange(id, new_state, params->mem);
 	}
 	//free(params);
+	//pthread_mutex_unlock(p_mem.mutexes.counting_mutex);
 }
 
 void parseDD(struct mem_and_buffer_and_sfd *params)
@@ -236,10 +240,10 @@ void parseDD(struct mem_and_buffer_and_sfd *params)
 		}
 	}
 	if(changed>0){
-		RoutingTable *new_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
-		createRoutingTable (*(params->mem->p_topology), params->mem->local_id, params->mem->p_status_table, new_routing_table);
+		//RoutingTable *new_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
+		createRoutingTable (params->mem);
 		//RoutingTable *old_routing_table = mem->p_routing_table;
-		params->mem->p_routing_table = new_routing_table;
+		//params->mem->p_routing_table = new_routing_table;
 	}
 }
 
@@ -255,7 +259,7 @@ void parseDDR(struct mem_and_buffer_and_sfd *params)
 	int source_id = (int)buf[1];
 
 	int dd_len;
-	char *dd = formDDPacket(params->mem->p_status_table, &dd_len);
+	char *dd = formDDPacket(params->mem, &dd_len);
 	sendToNeighbour(source_id, dd, dd_len, params->mem);
 	free(dd);
 }
