@@ -190,7 +190,7 @@ void showStatusTable(int status_table_size, NodeStatus* status_table)
 	printf("State table: \n");
 	printf("-----------\n");
 	int i;
-	for(i=0; i<status_table_size; i++){
+	for(i=MIN_ID; i<status_table_size+1; i++){
 		if(status_table[i] == ONLINE){
 			printf("node %d is ONLINE\n", indexToId(i));
 		}else{

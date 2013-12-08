@@ -66,6 +66,8 @@ void startInterface(struct shared_mem *mem)
 			sendToId(dest_id, packet, len, mem);
 		}else if(strcmp("routable\n", buffer) == 0){
 			showRoutingTable(mem);
+		}else if(strcmp("statable\n", buffer) == 0){
+			showStatusTable(mem->p_topology->nodes_count, mem->p_status_table);
 		}else{
 			printf("[ERROR] wrong format!\n"
 					"please enter the destination ID and then your message.\n");

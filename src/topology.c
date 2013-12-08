@@ -49,3 +49,14 @@ void showTopology(TopologyTable topology){
 	}
 	printf("-----------\n\n");
 }
+
+int isNeighbour(int a, int b, TopologyTable topology)
+{
+	int i;
+	for(i=0;i<topology.neighbors_counts[a];i++){
+		if(topology.table[a][i] == b){
+			return 1;
+		}
+	}
+	return 0;
+}

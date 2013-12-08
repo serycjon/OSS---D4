@@ -17,4 +17,5 @@ typedef struct topology_table{
 
 int insertIntoTopologyTable(int from, int to, TopologyTable* p_topology);
 void showTopology(TopologyTable topology);
+int isNeighbour(int a, int b, TopologyTable topology);
 #endif
