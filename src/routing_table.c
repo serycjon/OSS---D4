@@ -41,7 +41,7 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 	p_mem->p_status_table[local_id] = ONLINE;
 	showStatusTable(p_mem->p_topology->nodes_count, p_mem->p_status_table);
 
-	p_mem->p_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
+	p_mem->p_routing_table = (RoutingTable *) calloc(1, sizeof(RoutingTable));
 	createRoutingTable(p_mem);
 	//p_mem->p_routing_table = &routing_table;
 	//showRoutingTable(p_mem);
@@ -84,7 +84,7 @@ void createRoutingTable (struct shared_mem *p_mem)
 	Queue queue = (Queue) malloc((p_mem->p_topology->nodes_count) * sizeof(QueueEntry));
 	//RoutingTable routing_table;
 	pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));
-	p_mem->p_routing_table->table = (RoutingTableEntry*) malloc((p_mem->p_topology->nodes_count+1) * sizeof(RoutingTableEntry));
+	p_mem->p_routing_table->table = (RoutingTableEntry*) calloc((p_mem->p_topology->nodes_count+1), sizeof(RoutingTableEntry));
 	p_mem->p_routing_table->size = p_mem->p_topology->nodes_count;
 	pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 	int visited_nodes, i, last;
