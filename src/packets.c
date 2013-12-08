@@ -93,7 +93,7 @@ char *formMsgPacket(int source_id, int dest_id, char* text, int *len)
 	msg[2] = (u_char) source_id;
 	strcpy(msg+3, text);
 	// sprintf(msg+1, "Hi from %d!", id);
-	*len = 3*sizeof(char) + strlen(text); //strlen(msg+1)+sizeof(char);
+	*len = sizeof(char) * (3 + strlen(text) + 1); // (T_MSG, dest_id, source_id, msg, teminating \0)
 	return msg;
 }
 
