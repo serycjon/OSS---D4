@@ -65,7 +65,7 @@ char *formDDPacket(struct shared_mem *p_mem, int *len)
 
 char *formNSUPacket(int id, int new_state, int *len)
 {
-	//printf("sending NSU about node %d..\n", id);
+	printf("sending NSU about node %d... went %d (online:%d)\n", id, new_state, ONLINE);
 	char *msg = (char *) malloc(3*sizeof(char));
 	msg[0] = T_NSU;
 	msg[1] = (char) id;
@@ -100,17 +100,17 @@ char *formMsgPacket(int source_id, int dest_id, char* text, int *len)
 void packetParser(void *parameter)
 {
 	struct mem_and_buffer_and_sfd *params = (struct mem_and_buffer_and_sfd *) parameter;
-	char *buf = params->buf;
+	//char *buf = params->buf;
 	//printf("received: %s\n", buf);
 
-	if(params->len < 1 || buf==NULL){
+	if(params->len < 1 || params->buf==NULL){
 		printf("PACKET of zero length!!\n");
 		free(params->buf);
 		params->buf = NULL;
 		return;
 	}
 
-	char type = buf[0];
+	char type = params->buf[0];
 	switch(type){
 		case T_MSG:
 			parseMsg(params);
@@ -258,7 +258,6 @@ void parseDD(struct mem_and_buffer_and_sfd *params)
 
 void parseDDR(struct mem_and_buffer_and_sfd *params)
 {
-	//printf("received DDR\n");
 	int len = params->len;
 	char *buf = params->buf;
 
@@ -266,6 +265,7 @@ void parseDDR(struct mem_and_buffer_and_sfd *params)
 		printf("INVALID DDR length!\n");
 	}
 	int source_id = (int)buf[1];
+	printf("received DDR from %d\n", source_id);
 
 	int dd_len;
 	char *dd = formDDPacket(params->mem, &dd_len);
