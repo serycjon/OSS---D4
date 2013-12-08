@@ -320,6 +320,15 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 		sendToNeighbour(id, packet, len, mem);
 	}
 	sendNSU(id, new_state, mem);
+
+	if(new_state == OFFLINE){
+		int i;
+		for(i=0; i<mem->p_routing_table->size; i++){
+			if(i!=mem->local_id && mem->p_routing_table->table[i].next_hop_id == -1){
+				mem->p_status_table[i] = OFFLINE;
+			}
+		}
+	}
 	/* FREE AS A BIRD!!! */
 	//free(old_routing_table);
 #ifdef DEBUG
@@ -360,7 +369,7 @@ void sendToNeighbour(int dest_id, char *packet, int len, struct shared_mem *p_me
 
 void sendToId(int dest_id, char *packet, int len, struct shared_mem *p_mem)
 {
-	if(dest_id >= p_mem->p_topology->nodes_count){
+	if(dest_id >= p_mem->p_routing_table->size){
 		printf("cannot reach node %d\n", dest_id);
 		return;
 	}
