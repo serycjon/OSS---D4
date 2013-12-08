@@ -379,7 +379,7 @@ void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *p_me
 
 void sendToNeighbour(int dest_id, char *packet, int len, struct shared_mem *p_mem)
 {
-	//pthread_mutex_lock(&(p_mem->mutexes->connection_mutex));
+	pthread_mutex_lock(&(p_mem->mutexes->connection_mutex));
 	struct real_connection *conns = p_mem->p_connections;
 	if(conns[dest_id].type == OUT_CONN){
 		sendto(conns[dest_id].sockfd, packet, len, 0, 0, 0);
@@ -388,7 +388,7 @@ void sendToNeighbour(int dest_id, char *packet, int len, struct shared_mem *p_me
 		addr_len = sizeof(*(conns[dest_id].addr));
 		sendto(conns[dest_id].sockfd, packet, len, 0, conns[dest_id].addr, addr_len);
 	}
-	//pthread_mutex_unlock(&(p_mem->mutexes->connection_mutex));
+	pthread_mutex_unlock(&(p_mem->mutexes->connection_mutex));
 }
 
 void sendToId(int dest_id, char *packet, int len, struct shared_mem *p_mem)

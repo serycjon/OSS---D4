@@ -103,7 +103,11 @@ void packetParser(void *parameter)
 	//char *buf = params->buf;
 	//printf("received: %s\n", buf);
 
-	if(params->len < 1 || params->buf==NULL){
+	if(params->buf==NULL){
+		printf("buffer NULL!!!!\n");
+		return;
+	}
+	if(params->len < 1){
 		printf("PACKET of zero length!!\n");
 		free(params->buf);
 		params->buf = NULL;
