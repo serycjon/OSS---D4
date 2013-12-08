@@ -198,13 +198,13 @@ void parseNSU(struct mem_and_buffer_and_sfd *params)
 	int id = (int)buf[1];
 	int new_state = (int)buf[2];
 
-	pthread_mutex_lock(params->mem->mutexes->status_mutex);
+	pthread_mutex_lock(&(params->mem->mutexes->status_mutex));
 	if(params->mem->p_status_table[id]!=new_state && !isNeighbour(params->mem->local_id, id, *(params->mem->p_topology))){
 		printf("I have heard that node %d has changed its state!\n", id);
-		pthread_mutex_unlock(params->mem->mutexes->status_mutex);
+		pthread_mutex_unlock(&(params->mem->mutexes->status_mutex));
 		reactToStateChange(id, new_state, params->mem);
 	}else {
-		pthread_mutex_unlock(params->mem->mutexes->status_mutex);
+		pthread_mutex_unlock(&(params->mem->mutexes->status_mutex));
 	}
 	//free(params);
 }
@@ -227,21 +227,21 @@ void parseDD(struct mem_and_buffer_and_sfd *params)
 		for(int_index = 31; int_index > 0; int_index--){
 			if((bit_field[i]>>int_index & 1) == 1){
 				found = i*32 +31- int_index;
-				pthread_mutex_lock(params->mem->mutexes->status_mutex);
+				pthread_mutex_lock(&(params->mem->mutexes->status_mutex));
 				if(params->mem->p_status_table[found] == OFFLINE){
 				       if(!isNeighbour(params->mem->local_id, found, *(params->mem->p_topology))){
 					       //reactToStateChange(found, ONLINE, params->mem);
 					        printf("according to DD %d is ONLINE\n", found);
 					        changed++;
 					        params->mem->p_status_table[found] = ONLINE;
-						pthread_mutex_unlock(params->mem->mutexes->status_mutex);
+						pthread_mutex_unlock(&(params->mem->mutexes->status_mutex));
 					       //sleep(1);
 					        sendNSU(found, ONLINE, params->mem);
 				       }else if(params->mem->p_connections[found].online == OFFLINE){
-						pthread_mutex_unlock(params->mem->mutexes>status_mutex);
+						pthread_mutex_unlock(&(params->mem->mutexes->status_mutex));
 	 					sendNSU(found, OFFLINE, params->mem);
 				       }else{
-						pthread_mutex_unlock(params->mem->mutexes->status_mutex);
+						pthread_mutex_unlock(&(params->mem->mutexes->status_mutex));
 					}
 				}
 			}
@@ -267,7 +267,7 @@ void parseDDR(struct mem_and_buffer_and_sfd *params)
 	int source_id = (int)buf[1];
 
 	int dd_len;
-	char *dd = formDDPacket(params->mem->p_status_table, &dd_len);
+	char *dd = formDDPacket(params->mem, &dd_len);
 	sendToNeighbour(source_id, dd, dd_len, params->mem);
 	free(dd);
 }

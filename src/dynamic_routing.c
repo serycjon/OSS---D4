@@ -301,12 +301,13 @@ void satanKalous(void *param)
 
 void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 {
-//	pthread_mutex_lock(&(mem->mutexes->status_mutex));
+	pthread_mutex_lock(&(mem->mutexes->status_mutex));
 	if(mem->p_status_table[id]==new_state) {
-//		pthread_mutex_unlock(&(mem->mutexes->status_mutex));
+		pthread_mutex_unlock(&(mem->mutexes->status_mutex));
 		return;
+	}else {
+		pthread_mutex_unlock(&(mem->mutexes->status_mutex));
 	}
-//	pthread_mutex_unlock(&(mem->mutexes->status_mutex));
 
 	if(new_state == ONLINE){
 		printf("NODE %d WENT ONLINE!\n", id);
@@ -320,14 +321,12 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 #ifdef DEBUG
 	showStatusTable(mem->p_topology->nodes_count, mem->p_status_table);
 #endif
-	RoutingTable *new_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
-	pthread_mutex_lock(&(mem->mutexes->routing_mutex));	
-	pthread_mutex_lock(&(mem->mutexes->status_mutex));
+//	RoutingTable *new_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
+//	pthread_mutex_lock(&(mem->mutexes->routing_mutex));
 	createRoutingTable (mem);
 	//RoutingTable *old_routing_table = mem->p_routing_table;
-	mem->p_routing_table = new_routing_table;
-	pthread_mutex_unlock(&(mem->mutexes->status_mutex));	
-	pthread_mutex_unlock(&(mem->mutexes->routing_mutex));
+//	mem->p_routing_table = new_routing_table;	
+//	pthread_mutex_unlock(&(mem->mutexes->routing_mutex));
 
 	if(new_state == ONLINE && isNeighbour(mem->local_id, id, *(mem->p_topology))){
 		int len;
@@ -366,19 +365,21 @@ void sendNSU(int id, int new_state, struct shared_mem *mem)
 void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *p_mem)
 {
 	int id;
-	pthread_mutex_lock(&(mem->mutexes->connection_mutex));
+	pthread_mutex_lock(&(p_mem->mutexes->connection_mutex));
 	struct real_connection *conns = p_mem->p_connections;
 	for(id=0; id<MAX_NODES; id++){
 		if(id != not_to && conns[id].id!=-1){
-			sendToNeighbour(id, packet, len, p_mem);	
+			pthread_mutex_unlock(&(p_mem->mutexes->connection_mutex));			
+			sendToNeighbour(id, packet, len, p_mem);
+			pthread_mutex_lock(&(p_mem->mutexes->connection_mutex));	
 		}
 	}
-	pthread_mutex_unlock(&(mem->mutexes->connection_mutex));
+	pthread_mutex_unlock(&(p_mem->mutexes->connection_mutex));
 }
 
 void sendToNeighbour(int dest_id, char *packet, int len, struct shared_mem *p_mem)
 {
-	pthread_mutex_lock(&(mem->mutexes->connection_mutex));
+	pthread_mutex_lock(&(p_mem->mutexes->connection_mutex));
 	struct real_connection *conns = p_mem->p_connections;
 	if(conns[dest_id].type == OUT_CONN){
 		sendto(conns[dest_id].sockfd, packet, len, 0, 0, 0);
@@ -387,29 +388,31 @@ void sendToNeighbour(int dest_id, char *packet, int len, struct shared_mem *p_me
 		addr_len = sizeof(*(conns[dest_id].addr));
 		sendto(conns[dest_id].sockfd, packet, len, 0, conns[dest_id].addr, addr_len);
 	}
-	pthread_mutex_unlock(&(mem->mutexes->connection_mutex));
+	pthread_mutex_unlock(&(p_mem->mutexes->connection_mutex));
 }
 
 void sendToId(int dest_id, char *packet, int len, struct shared_mem *p_mem)
 {
-	pthread_mutex_lock(&(mem->mutexes->routing_mutex));
+	pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));
 	if(dest_id >= p_mem->p_routing_table->size){
 		printf("cannot reach node %d\n", dest_id);
-		pthread_mutex_unlock(&(mem->mutexes->routing_mutex));
+		pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 		return;
+	}else{
+		pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 	}
-	pthread_mutex_unlock(&(mem->mutexes->routing_mutex));
 	if(dest_id == p_mem->local_id){
 		printf("why would you send anything to yourself!?!\n");
 		return;
 	}
-	pthread_mutex_lock(&(mem->mutexes->routing_mutex));
+	pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));
 	int next_id = p_mem->p_routing_table->table[idToIndex(dest_id)].next_hop_id;
 	if(next_id==-1){
 		printf("cannot reach node %d\n", dest_id);
-		pthread_mutex_unlock(&(mem->mutexes->routing_mutex));
+		pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 		return;
+	}else{
+		pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 	}
-	pthread_mutex_unlock(&(mem->mutexes->routing_mutex));
 	sendToNeighbour(next_id, packet, len, p_mem);
 }
