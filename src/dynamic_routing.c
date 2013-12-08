@@ -102,9 +102,9 @@ int inInit(void* mem)
 		addr_cpy->sa_family = ((struct sockaddr *)&their_addr)->sa_family;
 		memcpy(addr_cpy->sa_data, ((struct sockaddr *)&their_addr)->sa_data, sizeof(((struct sockaddr *)&their_addr)->sa_data));
 
-		char *buf_cpy = (char *) calloc((numbytes+1), sizeof(char));
+		char *buf_cpy = (char *) calloc((numbytes), sizeof(char));
 		
-		memcpy(buf_cpy, buf, (numbytes+1)*sizeof(char));
+		memcpy(buf_cpy, buf, (numbytes)*sizeof(char));
 		struct mem_and_buffer_and_sfd param;
 		param.buf = buf_cpy;
 		param.len = numbytes;
@@ -235,8 +235,8 @@ void sockListener(void *in_param)
 // 		char *buf_cpy = (char *) malloc((numbytes+1) * sizeof(char));
 		//memcpy(buf_cpy, buf, (numbytes+1)*sizeof(char));
 
-		char *buf_cpy = (char *) calloc((nread+1), sizeof(char));
-		memcpy(buf_cpy, buf, (nread+1)*sizeof(char));
+		char *buf_cpy = (char *) calloc((nread), sizeof(char));
+		memcpy(buf_cpy, buf, (nread)*sizeof(char));
 		//printf("size: %zd\n", nread);
 		struct mem_and_buffer_and_sfd param;
 		param.buf = buf_cpy;
