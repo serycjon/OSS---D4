@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <arpa/inet.h>
+#include <pthread.h>
 #include "dynamic_routing.h"
 #include "packets.h"
 #include "main.h"
@@ -27,7 +28,7 @@ char *formDDRequestPacket(int source_id, int *len)
 	return msg;
 }
 
-char *formDDPacket(NodeStatus *state_table, int *len)
+char *formDDPacket(struct shared_mem *p_mem, int *len)
 {
 	uint32_t mask = 1 << 31; // only MSB is set
 	uint32_t bit_field[8]; // we need 8*32 bits
@@ -37,12 +38,14 @@ char *formDDPacket(NodeStatus *state_table, int *len)
 	}
 
 	for(i=0; i < MAX_NODES+1; i++){
-		if(state_table[i] == ONLINE){
+		pthread_mutex_lock(&(p_mem->mutexes->status_mutex));
+		if(p_mem->p_status_table[i] == ONLINE){
 			//printf("neco tu mame!\n");
 			bit_field_index = i/32;
 			int_index = i%32;
 			bit_field[bit_field_index] |= mask >> int_index;
 		}
+		pthread_mutex_unlock(&(p_mem->mutexes->status_mutex));
 	}
 
 
@@ -195,9 +198,13 @@ void parseNSU(struct mem_and_buffer_and_sfd *params)
 	int id = (int)buf[1];
 	int new_state = (int)buf[2];
 
+	pthread_mutex_lock(params->mem->mutexes->status_mutex);
 	if(params->mem->p_status_table[id]!=new_state && !isNeighbour(params->mem->local_id, id, *(params->mem->p_topology))){
 		printf("I have heard that node %d has changed its state!\n", id);
+		pthread_mutex_unlock(params->mem->mutexes->status_mutex);
 		reactToStateChange(id, new_state, params->mem);
+	}else {
+		pthread_mutex_unlock(params->mem->mutexes->status_mutex);
 	}
 	//free(params);
 }
@@ -220,26 +227,31 @@ void parseDD(struct mem_and_buffer_and_sfd *params)
 		for(int_index = 31; int_index > 0; int_index--){
 			if((bit_field[i]>>int_index & 1) == 1){
 				found = i*32 +31- int_index;
+				pthread_mutex_lock(params->mem->mutexes->status_mutex);
 				if(params->mem->p_status_table[found] == OFFLINE){
 				       if(!isNeighbour(params->mem->local_id, found, *(params->mem->p_topology))){
 					       //reactToStateChange(found, ONLINE, params->mem);
-					       printf("according to DD %d is ONLINE\n", found);
-					       changed++;
-					       params->mem->p_status_table[found] = ONLINE;
+					        printf("according to DD %d is ONLINE\n", found);
+					        changed++;
+					        params->mem->p_status_table[found] = ONLINE;
+						pthread_mutex_unlock(params->mem->mutexes->status_mutex);
 					       //sleep(1);
-					       sendNSU(found, ONLINE, params->mem);
+					        sendNSU(found, ONLINE, params->mem);
 				       }else if(params->mem->p_connections[found].online == OFFLINE){
-					       sendNSU(found, OFFLINE, params->mem);
-				       }
+						pthread_mutex_unlock(params->mem->mutexes>status_mutex);
+	 					sendNSU(found, OFFLINE, params->mem);
+				       }else{
+						pthread_mutex_unlock(params->mem->mutexes->status_mutex);
+					}
 				}
 			}
 		}
 	}
 	if(changed>0){
-		RoutingTable *new_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
-		createRoutingTable (*(params->mem->p_topology), params->mem->local_id, params->mem->p_status_table, new_routing_table);
+	//	RoutingTable *new_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
+		createRoutingTable (params->mem);
 		//RoutingTable *old_routing_table = mem->p_routing_table;
-		params->mem->p_routing_table = new_routing_table;
+	//	params->mem->p_routing_table = new_routing_table;
 	}
 }
 
