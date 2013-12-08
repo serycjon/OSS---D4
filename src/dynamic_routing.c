@@ -286,7 +286,7 @@ void satanKalous(void *param)
 				time_since_last_seen = difftime(end, conns[i].last_seen);
 				//printf("node %d last seen %lf s ago...\n", conns[i].id, time_since_last_seen);
 				if(time_since_last_seen > DEATH_TIMER){
-					printf("SATAN KALOUS says: node %d is death!\n", i);
+					printf("SATAN KALOUS says: node %d is dead!\n", i);
 					conns[i].online = OFFLINE;
 					reactToStateChange(i, OFFLINE, (struct shared_mem *) param);
 					//printf("NODE %d went OFFLINE!!!\n", conns[i].id);
@@ -306,7 +306,6 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 		printf("NODE %d WENT OFFLINE!\n", id);
 	}
 	mem->p_status_table[id] = new_state;
-	sendNSU(id, new_state, mem);
 #ifdef DEBUG
 	showStatusTable(mem->p_topology->nodes_count, mem->p_status_table);
 #endif
@@ -315,12 +314,12 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 	//RoutingTable *old_routing_table = mem->p_routing_table;
 	mem->p_routing_table = new_routing_table;
 
-	if(new_state == ONLINE){
-		sleep(1);
+	if(new_state == ONLINE && isNeighbour(mem->local_id, id, *(mem->p_topology))){
 		int len;
-		char *packet = formDDPacket(mem->p_status_table, &len);
-		sendToId(id, packet, len, mem);
+		char *packet = formDDRequestPacket(mem->local_id, &len);
+		sendToNeighbour(id, packet, len, mem);
 	}
+	sendNSU(id, new_state, mem);
 	/* FREE AS A BIRD!!! */
 	//free(old_routing_table);
 #ifdef DEBUG
@@ -336,54 +335,43 @@ void sendNSU(int id, int new_state, struct shared_mem *mem)
 	sendToNeighbours(id, packet, len, mem);
 }
 
-void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *mem)
+void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *p_mem)
 {
 	int id;
-	struct real_connection *conns = mem->p_connections;
+	struct real_connection *conns = p_mem->p_connections;
 	for(id=0; id<MAX_NODES; id++){
 		if(id != not_to && conns[id].id!=-1){
-			// char s[INET6_ADDRSTRLEN];
-			//printf("will try to send to node %d\n", id);
-			// if(conns[id].addr != NULL){
-			// 	inet_ntop(conns[id].addr->sa_family,
-			// 			get_in_addr(conns[id].addr),
-			// 			s, sizeof s);
-			// 	int port = ntohs(((struct sockaddr_in *)conns[id].addr)->sin_port);
-			// 	printf("type: %s\nsfd: %d\naddr: %s\nport: %d\n", conns[id].type==OUT_CONN?"OUT":"IN", conns[id].sockfd,s,port);
-			// }
-			if(conns[id].type == OUT_CONN){
-				sendto(conns[id].sockfd, packet, len, 0, 0, 0);
-			}else{
-				socklen_t addr_len;
-				addr_len = sizeof(*(conns[id].addr));
-				sendto(conns[id].sockfd, packet, len, 0, conns[id].addr, addr_len);
-			}
+			sendToNeighbour(id, packet, len, p_mem);	
 		}
 	}
-	//printf("everything sent\n");
 }
 
-void sendToId(int dest_id, char *packet, int len, struct shared_mem *mem)
+void sendToNeighbour(int dest_id, char *packet, int len, struct shared_mem *p_mem)
 {
-	if(dest_id >= mem->p_topology->nodes_count){
+	struct real_connection *conns = p_mem->p_connections;
+	if(conns[dest_id].type == OUT_CONN){
+		sendto(conns[dest_id].sockfd, packet, len, 0, 0, 0);
+	} else {
+		socklen_t addr_len;
+		addr_len = sizeof(*(conns[dest_id].addr));
+		sendto(conns[dest_id].sockfd, packet, len, 0, conns[dest_id].addr, addr_len);
+	}
+}
+
+void sendToId(int dest_id, char *packet, int len, struct shared_mem *p_mem)
+{
+	if(dest_id >= p_mem->p_topology->nodes_count){
 		printf("cannot reach node %d\n", dest_id);
 		return;
 	}
-	if(dest_id == mem->local_id){
+	if(dest_id == p_mem->local_id){
 		printf("why would you send anything to yourself!?!\n");
 		return;
 	}
-	int next_id = mem->p_routing_table->table[idToIndex(dest_id)].next_hop_id;
+	int next_id = p_mem->p_routing_table->table[idToIndex(dest_id)].next_hop_id;
 	if(next_id==-1){
 		printf("cannot reach node %d\n", dest_id);
 		return;
 	}
-	struct real_connection *conns = mem->p_connections;
-	if(conns[next_id].type == OUT_CONN){
-		sendto(conns[next_id].sockfd, packet, len, 0, 0, 0);
-	} else {
-		socklen_t addr_len;
-		addr_len = sizeof(*(conns[next_id].addr));
-		sendto(conns[next_id].sockfd, packet, len, 0, conns[next_id].addr, addr_len);
-	}
+	sendToNeighbour(next_id, packet, len, p_mem);
 }
