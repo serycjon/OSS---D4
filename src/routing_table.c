@@ -95,7 +95,7 @@ void createRoutingTable (TopologyTable topology, int node_ID, NodeStatus* status
 		//no_path.next_hop_port = -1;
 		//no_path.next_hop_id = -1;
 		//strcpy(no_path.next_hop_ip, "none");
-		routing_table->table[i].next_hop_id = -1;
+		routing_table->table[i].next_hop_id = NOT_VISITED;
 	}
 
 	// routing to myself probably won't be needed
@@ -107,8 +107,8 @@ void createRoutingTable (TopologyTable topology, int node_ID, NodeStatus* status
 
 	for(i=0; i<topology.neighbors_counts[idToIndex(node_ID)]; i++){			//adding close neighbors into queue and routing_table
 		int new_node_ID  = indexToId(topology.table[idToIndex(node_ID)][i]);
-		if(status_table[idToIndex(new_node_ID)] == ONLINE&&
-				routing_table->table[idToIndex(new_node_ID)].next_hop_id == -1){
+		if(status_table[idToIndex(new_node_ID)] == ONLINE &&
+				routing_table->table[idToIndex(new_node_ID)].next_hop_id == NOT_VISITED){
 			QueueEntry new;
 			RoutingTableEntry new_entry; //add IP and port!
 			new_entry.next_hop_id = new_node_ID;
@@ -127,7 +127,7 @@ void createRoutingTable (TopologyTable topology, int node_ID, NodeStatus* status
 #endif
 		for(i=0; i<topology.neighbors_counts[idToIndex(actual_node_ID)]; i++){	//check actual node neighbors
 			int new_node_ID  = indexToId(topology.table[idToIndex(actual_node_ID)][i]);
-			if(routing_table->table[idToIndex(new_node_ID)].next_hop_id == -1 && status_table[idToIndex(new_node_ID)] == ONLINE){
+			if(routing_table->table[idToIndex(new_node_ID)].next_hop_id == NOT_VISITED && status_table[idToIndex(new_node_ID)] == ONLINE){
 #ifdef DEBUG
 				printf("debug: discovered it's neighbor %d\n", new_node_ID);
 #endif
@@ -147,7 +147,7 @@ void createRoutingTable (TopologyTable topology, int node_ID, NodeStatus* status
 	free(queue);
 	queue = NULL;
 
-	routing_table->table[idToIndex(node_ID)].next_hop_id = -1;
+	routing_table->table[idToIndex(node_ID)].next_hop_id = NOT_VISITED;
 	//routing_table->table[idToIndex(node_ID)].next_hop_port = -1;
 	//strcpy(routing_table->table[idToIndex(node_ID)].next_hop_ip, "none");
 
