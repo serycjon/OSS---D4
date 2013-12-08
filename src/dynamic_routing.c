@@ -182,12 +182,12 @@ void outInit(struct shared_mem *mem, Connections out_conns)
 		   datagrams, and read responses from server */
 		//printf("created socket: %d\n", sfd);
 		
-		pthread_mutex_lock(&mem->mutexes->connection_mutex);
+		pthread_mutex_lock(&(mem->mutexes->connection_mutex));
 		struct mem_and_sfd *param;
 		param = (struct mem_and_sfd*) malloc(sizeof(struct mem_and_sfd));
 		param->sfd = sfd;
 		param->mem = mem;
-		pthread_mutex_unlock(&mem->mutexes->connection_mutex);
+		pthread_mutex_unlock(&(mem->mutexes->connection_mutex));
 
 		pthread_t listen_thread;
 		pthread_create(&listen_thread, NULL, (void*) &sockListener, (void*) param);
@@ -198,14 +198,14 @@ void outInit(struct shared_mem *mem, Connections out_conns)
 		// printf("debug: %d\n", out_conns.array[i].id);
 		// printf("dalsi: %d\n", mem->p_routing_table->table[4].next_hop_id);
 
-		pthread_mutex_lock(&mem->mutexes->connection_mutex);
+		pthread_mutex_lock(&(mem->mutexes->connection_mutex));
 		struct real_connection *rc = &(mem->p_connections[out_conns.array[i].id]);
 		rc->type = OUT_CONN; // OUT connection
 		rc->id = out_conns.array[i].id;
 		rc->sockfd = sfd;
 		rc->last_seen = clock();
 		rc->online = OFFLINE;
-		pthread_mutex_unlock(&mem->mutexes->connection_mutex);
+		pthread_mutex_unlock(&(mem->mutexes->connection_mutex));
 	}
 }
 
@@ -295,29 +295,29 @@ void satanKalous(void *param)
 
 void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 {
-	pthread_mutex_lock(&mem->mutexes->status_mutex);
+	pthread_mutex_lock(&(mem->mutexes->status_mutex));
 	if(mem->p_status_table[id]==new_state) return;
-	pthread_mutex_unlock(&mem->mutexes->status_mutex);
+	pthread_mutex_unlock(&(mem->mutexes->status_mutex));
 	if(new_state == ONLINE){
 		printf("NODE %d WENT ONLINE!\n", id);
 	}else{
 		printf("NODE %d WENT OFFLINE!\n", id);
 	}
-	pthread_mutex_lock(&mem->mutexes->status_mutex);
+	pthread_mutex_lock(&(mem->mutexes->status_mutex));
 	mem->p_status_table[id] = new_state;
 	sendNSU(id, new_state, mem);
-	pthread_mutex_unlock(&mem->mutexes->status_mutex);
+	pthread_mutex_unlock(&(mem->mutexes->status_mutex));
 #ifdef DEBUG
 	showStatusTable(mem->p_topology->nodes_count, mem->p_status_table);
 #endif
 	RoutingTable *new_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
-	pthread_mutex_lock(&mem->mutexes->routing_mutex);	
-	pthread_mutex_lock(&mem->mutexes->status_mutex);	
+	pthread_mutex_lock(&(mem->mutexes->routing_mutex));	
+	pthread_mutex_lock(&(mem->mutexes->status_mutex));	
 	createRoutingTable (mem);
 	//RoutingTable *old_routing_table = mem->p_routing_table;
 	mem->p_routing_table = new_routing_table;
-	pthread_mutex_unlock(&mem->mutexes->status_mutex);	
-	pthread_mutex_unlock(&mem->mutexes->routing_mutex);
+	pthread_mutex_unlock(&(mem->mutexes->status_mutex));	
+	pthread_mutex_unlock(&(mem->mutexes->routing_mutex));
 	/* FREE AS A BIRD!!! */
 	//free(old_routing_table);
 #ifdef DEBUG
@@ -336,7 +336,7 @@ void sendNSU(int id, int new_state, struct shared_mem *mem)
 void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *mem)
 {	
 	int id;
-	pthread_mutex_lock(&mem->mutexes->connection_mutex);
+	pthread_mutex_lock(&(mem->mutexes->connection_mutex));
 	struct real_connection *conns = mem->p_connections;
 	for(id=0; id<MAX_NODES; id++){
 		if(id != not_to && conns[id].id!=-1){
@@ -359,7 +359,7 @@ void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *mem)
 		}
 	}
 	//printf("everything sent\n");
-	pthread_mutex_unlock(&mem->mutexes->connection_mutex);
+	pthread_mutex_unlock(&(mem->mutexes->connection_mutex));
 }
 
 void sendToId(int dest_id, char *packet, int len, struct shared_mem *mem) 
@@ -372,14 +372,14 @@ void sendToId(int dest_id, char *packet, int len, struct shared_mem *mem)
 		printf("why would you send anything to yourself!?!\n");
 		return;
 	}
-	pthread_mutex_lock(&mem->mutexes->routing_mutex);	
+	pthread_mutex_lock(&(mem->mutexes->routing_mutex));	
 	int next_id = mem->p_routing_table->table[idToIndex(dest_id)].next_hop_id;
-	pthread_mutex_unlock(&mem->mutexes->routing_mutex);	
+	pthread_mutex_unlock(&(mem->mutexes->routing_mutex));	
 	if(next_id==-1){
 		printf("cannot reach node %d\n", dest_id);
 		return;
 	}	
-	pthread_mutex_lock(&mem->mutexes->connection_mutex);
+	pthread_mutex_lock(&(mem->mutexes->connection_mutex));
 	struct real_connection *conns = mem->p_connections;
 	if(conns[next_id].type == OUT_CONN){
 		sendto(conns[next_id].sockfd, packet, len, 0, 0, 0);
@@ -388,5 +388,5 @@ void sendToId(int dest_id, char *packet, int len, struct shared_mem *mem)
 		addr_len = sizeof(*(conns[next_id].addr));
 		sendto(conns[next_id].sockfd, packet, len, 0, conns[next_id].addr, addr_len);
 	}
-	pthread_mutex_unlock(&mem->mutexes->connection_mutex);
+	pthread_mutex_unlock(&(mem->mutexes->connection_mutex));
 }
