@@ -36,13 +36,15 @@ void resendUndeliveredMessages(int to_id, struct shared_mem *mem)
 
 
 	while(*ptr != NULL){
-		if((*ptr)->dest_id == to_id){
+		if((*ptr)->dest_id == to_id || to_id==ALL){
 			//send
-			sendToId(to_id, (*ptr)->message, (*ptr)->len, mem, NORETRY);
+			sendToId((*ptr)->dest_id, (*ptr)->message, (*ptr)->len, mem, NORETRY);
 
 			//delete from buffer
+#ifdef DEBUG
 			printf("will delete this msg(sent): ");
 			showUndeliveredMessage(*ptr);
+#endif
 			UndeliveredMessage *old = ((*ptr));
 			*ptr = (*ptr)->next;
 			free(old->message);
@@ -58,8 +60,10 @@ void deleteOldMessage(struct shared_mem *mem)
 {
 	UndeliveredMessage **ptr = &(mem->buffer->next);
 	while((*ptr)->next != NULL) ptr = &(*ptr)->next; // move to the end
+#ifdef DEBUG
 	printf("will delete: ");
 	showUndeliveredMessage(*ptr);
+#endif
 	free((*ptr)->message);
 	free((*ptr));
 	(*ptr) = NULL;
@@ -75,8 +79,10 @@ void addWaitingMessage(int dest_id, int len, char* msg, struct shared_mem *mem)
 	memcpy(new->message, msg, len*sizeof(char));
 	new->next = NULL;
 
+#ifdef DEBUG
 	printf("adding: ");
 	showUndeliveredMessage(new);
+#endif
 
 	if(mem->buf_size == 0){
 		mem->buffer = new;
