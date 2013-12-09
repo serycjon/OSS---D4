@@ -31,7 +31,7 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 	}
 
 	#ifdef DEBUG
-	showTopology(topology);
+	showTopology(*(p_mem->p_topology));
 	#endif
 	p_mem->p_status_table =(NodeStatus *) malloc((MAX_NODES+1)*sizeof(NodeStatus));
 	int i;
