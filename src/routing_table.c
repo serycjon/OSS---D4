@@ -39,7 +39,7 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 		p_mem->p_status_table[i] = OFFLINE;
 	}
 	p_mem->p_status_table[local_id] = ONLINE;
-	showStatusTable(p_mem->p_topology->nodes_count, p_mem->p_status_table);
+	showStatusTable(p_mem);
 
 	p_mem->p_routing_table = (RoutingTable *) calloc(1, sizeof(RoutingTable));
 	createRoutingTable(p_mem);
@@ -85,7 +85,7 @@ void createRoutingTable (struct shared_mem *p_mem)
 	//RoutingTable routing_table;
 	pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));
 	p_mem->p_routing_table->table = (RoutingTableEntry*) calloc((p_mem->p_topology->nodes_count+1), sizeof(RoutingTableEntry));
-	p_mem->p_routing_table->size = p_mem->p_topology->nodes_count;
+	p_mem->p_routing_table->size = p_mem->p_topology->nodes_count+1;
 	//pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 	int visited_nodes, i, last;
 	last = 0;
@@ -178,7 +178,7 @@ int indexToId(int index){
 
 void showRoutingTable(struct shared_mem *mem)
 {
-//	pthread_mutex_lock(&(mem->mutexes->routing_mutex));
+	pthread_mutex_lock(&(mem->mutexes->routing_mutex));
 	RoutingTable *routing_table = mem->p_routing_table;
 	printf("---------------\n");
 	printf("Routing table\n");
@@ -195,24 +195,24 @@ void showRoutingTable(struct shared_mem *mem)
 			}
 		}
 	}
-//	pthread_mutex_unlock(&(mem->mutexes->routing_mutex));
+	pthread_mutex_unlock(&(mem->mutexes->routing_mutex));
 	printf("---------------\n\n");
 }
 
-void showStatusTable(int status_table_size, NodeStatus* status_table)
+void showStatusTable(struct shared_mem *mem)
 {
 	printf("-----------\n");
 	printf("State table: \n");
 	printf("-----------\n");
-//	pthread_mutex_lock(&(p_mem->mutexes.status_mutex)); 
+	pthread_mutex_lock(&(mem->mutexes->status_mutex)); 
 	int i;
-	for(i=MIN_ID; i<status_table_size+1; i++){
-		if(status_table[i] == ONLINE){
+	for(i=MIN_ID; i<mem->p_topology->nodes_count+1; i++){
+		if(mem->p_status_table[i] == ONLINE){
 			printf("node %d is ONLINE\n", indexToId(i));
 		}else{
 			printf("node %d is OFFLINE\n", indexToId(i));
 		}
 	}
-//	pthread_mutex_unlock(&(p_mem->mutexes.status_mutex));
+	pthread_mutex_unlock(&(mem->mutexes->status_mutex));
 	printf("-----------\n\n");
 }
