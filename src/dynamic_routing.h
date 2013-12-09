@@ -29,7 +29,7 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem);
 void sendNSU(int id, int new_state, struct shared_mem *mem);
 void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *mem);
 void sendToNeighbour(int dest_id, char *packet, int len, struct shared_mem *p_mem);
-void sendToId(int dest_id, char *packet, int len, struct shared_mem *p_mem, int retry);
+int sendToId(int dest_id, char *packet, int len, struct shared_mem *p_mem, int retry);
 
 
 #endif
