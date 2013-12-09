@@ -43,6 +43,7 @@ void resendUndeliveredMessages(int to_id, struct shared_mem *mem)
 		if((*ptr)->dest_id == to_id || to_id==ALL){
 			//send
 			if(sendToId((*ptr)->dest_id, (*ptr)->message, (*ptr)->len, mem, NORETRY) == -1){
+				ptr = &(*ptr)->next;
 				continue;
 			}
 			sleep(1);
