@@ -6,6 +6,7 @@
 #include "routing_table.h"
 #include "settings.h"
 #include "packets.h"
+#include "buffer.h"
 
 void startInterface();
 
@@ -44,6 +45,7 @@ int main(int argc, char** argv)
 	pthread_mutex_init(&p_mem->mutexes->routing_mutex, NULL);
 	pthread_mutex_init(&p_mem->mutexes->status_mutex, NULL);
 	pthread_mutex_init(&p_mem->mutexes->connection_mutex, NULL);
+	pthread_mutex_init(&p_mem->mutexes->buffer_mutex, NULL);
 	initRouting(config_file_name, node_id, p_mem);
 	printf("Topology table size: %d\n", p_mem->p_topology->nodes_count);
 	showRoutingTable(p_mem);
@@ -66,11 +68,13 @@ void startInterface(struct shared_mem *mem)
 			if(strlen(msg)==0) continue;
 #endif
 			char *packet = formMsgPacket(mem->local_id, dest_id, msg, &len);
-			sendToId(dest_id, packet, len, mem);
+			sendToId(dest_id, packet, len, mem, RETRY);
 		}else if(strcmp("r\n", buffer) == 0){
 			showRoutingTable(mem);
 		}else if(strcmp("s\n", buffer) == 0){
 			showStatusTable(mem->p_topology->nodes_count, mem->p_status_table);
+		}else if(strcmp("b\n", buffer) == 0){
+			showUndeliveredMessages(mem);
 		}else{
 			printf("[ERROR] wrong format!\n"
 					"please enter the destination ID and then your message.\n");
