@@ -52,9 +52,12 @@ void resendUndeliveredMessages(int to_id, struct shared_mem *mem)
 // #endif
 			UndeliveredMessage *old = ((*ptr));
 			*ptr = (*ptr)->next;
+
+			pthread_mutex_lock(&(mem->mutexes->buffer_mutex));
 			free(old->message);
 			free(old);
 			mem->buf_size--;
+			pthread_mutex_unlock(&(mem->mutexes->buffer_mutex));
 		}else{
 			ptr = &(*ptr)->next;
 		}
