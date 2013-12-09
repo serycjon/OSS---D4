@@ -274,8 +274,8 @@ void helloSender(void *param)
 
 void satanKalous(void *param)
 {
-	struct shared_mem mem = *((struct shared_mem*) param);
-	struct real_connection *conns = mem.p_connections;
+	struct shared_mem *mem = ((struct shared_mem*) param);
+	struct real_connection *conns = mem->p_connections;
 
 	time_t end;
 	double time_since_last_seen;
@@ -285,17 +285,22 @@ void satanKalous(void *param)
 	for(;;){
 		end = time(NULL);
 		for(i=MIN_ID; i<MAX_NODES; i++){
-			if(i==mem.local_id) continue;
-			//if(mem.p_status_table[i] == ONLINE){
+			if(i==mem->local_id) continue;
+			pthread_mutex_lock(&(mem->mutexes->connection_mutex));
 			if(conns[i].online==ONLINE){
 				time_since_last_seen = difftime(end, conns[i].last_seen);
+				pthread_mutex_unlock(&(mem->mutexes->connection_mutex));
 				//printf("node %d last seen %lf s ago...\n", conns[i].id, time_since_last_seen);
 				if(time_since_last_seen > DEATH_TIMER){
 					printf("SATAN KALOUS says: node %d is dead!\n", i);
+					pthread_mutex_lock(&(mem->mutexes->connection_mutex));
 					conns[i].online = OFFLINE;
-					reactToStateChange(i, OFFLINE, (struct shared_mem *) param);
+					pthread_mutex_unlock(&(mem->mutexes->connection_mutex));
+					reactToStateChange(i, OFFLINE, mem);
 					//printf("NODE %d went OFFLINE!!!\n", conns[i].id);
 				}
+			}else{
+				pthread_mutex_unlock(&(mem->mutexes->connection_mutex));
 			}
 		}
 		sleep(DEATH_TIMER);
@@ -322,7 +327,7 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 	pthread_mutex_unlock(&(mem->mutexes->status_mutex));
 
 #ifdef DEBUG
-	showStatusTable(mem->p_topology->nodes_count, mem->p_status_table);
+	showStatusTable(mem);
 #endif
 
 	createRoutingTable (mem);
@@ -422,9 +427,9 @@ int sendToId(int dest_id, char *packet, int len, struct shared_mem *p_mem, int r
 		pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 
 		if(retry==RETRY){
-			pthread_mutex_lock(&(p_mem->mutexes->buffer_mutex));
+			//pthread_mutex_lock(&(p_mem->mutexes->buffer_mutex));
 			addWaitingMessage(dest_id, len, packet, p_mem);;
-			pthread_mutex_unlock(&(p_mem->mutexes->buffer_mutex));
+			//pthread_mutex_unlock(&(p_mem->mutexes->buffer_mutex));
 		}
 		return -1;
 	}else{
