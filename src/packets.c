@@ -142,27 +142,26 @@ void packetParser(void *parameter)
 
 void parseMsg(struct mem_and_buffer_and_sfd *params)
 {
-	char *buf = params->buf;
 	if(params->len < 4 || params->buf==NULL){
 		printf("packet too short\n");
 		return;
 	}
 
-	int dest_id = (int)buf[1];
-	int source_id = (int)buf[2];
+	int dest_id = (int)params->buf[1];
+	int source_id = (int)params->buf[2];
 #ifdef DEBUG
 	printf("Received MSG from %d to %d:\n"
-			"%s\n", source_id, dest_id, buf+3);
+			"%s\n", source_id, dest_id, params->buf+3);
 #endif
 	if(dest_id!=params->mem->local_id){
 #ifdef DEBUG
 		printf("I should send it elsewhere!\n");
 #endif
-		sendToId(dest_id, buf, params->len, params->mem, RETRY);
+		sendToId(dest_id, params->buf, params->len, params->mem, RETRY);
 	} else {
 		printf("-----------\n");
 		printf("Received message from node #%d:\n", source_id);
-		printf("%s\n", buf+3);
+		printf("%s\n", params->buf+3);
 		printf("-----------\n");
 	}
 	//free(params);
@@ -171,41 +170,35 @@ void parseMsg(struct mem_and_buffer_and_sfd *params)
 void parseHello(struct mem_and_buffer_and_sfd *params)
 {
 	int len = params->len;
-	char *buf = params->buf;
 
 	if(len!=2*sizeof(char)){
 		printf("INVALID hello size!\n");
 	}
-	int source_id = (int)buf[1];
+	int source_id = (int)params->buf[1];
 	//printf("Got hello from %d\n", source_id);
 	pthread_mutex_lock(&(params->mem->mutexes->connection_mutex));
 	struct real_connection *conn = &(params->mem->p_connections[source_id]);
 	conn->type = IN_CONN;
 	conn->id = source_id;
-	conn->addr = params->addr;
+	conn->addr = params->addr; // deepcopy!
 	conn->sockfd = params->sfd;
 	conn->last_seen = time(NULL);
 	conn->online = ONLINE;
 	pthread_mutex_unlock(&(params->mem->mutexes->connection_mutex));
-	//if(conn->online==OFFLINE){
-	reactToStateChange(source_id, ONLINE, params->mem);
-	//}
 
-	//printf("HELLO from %d!\n", source_id);
-	//free(params);
+	reactToStateChange(source_id, ONLINE, params->mem);
 }
 
 void parseNSU(struct mem_and_buffer_and_sfd *params)
 {
 	//printf("received NSU\n");
 	int len = params->len;
-	char *buf = params->buf;
 
 	if(len!=3*sizeof(char)){
 		printf("INVALID NSU!\n");
 	}
-	int id = (int)buf[1];
-	int new_state = (int)buf[2];
+	int id = (int)params->buf[1];
+	int new_state = (int)params->buf[2];
 
 	pthread_mutex_lock(&(params->mem->mutexes->status_mutex));
 	if(params->mem->p_status_table[id]!=new_state && !isNeighbour(params->mem->local_id, id, *(params->mem->p_topology))){
@@ -222,7 +215,6 @@ void parseDD(struct mem_and_buffer_and_sfd *params)
 {
 	uint32_t bit_field[8]; // we need 8*32 bits
 	int len = params->len;
-	char *buf = params->buf;
 
 	printf("received DD packet\n");
 	if(len!=33*sizeof(char)){
@@ -231,7 +223,7 @@ void parseDD(struct mem_and_buffer_and_sfd *params)
 	int i, found, int_index;
 	int changed = 0;
 	for(i=0; i < 8;   i++){
-		bit_field[i] = ntohl(*(buf+1+i*4));
+		bit_field[i] = ntohl(*(params->buf+1+i*4));
 
 		for(int_index = 31; int_index > 0; int_index--){
 			if((bit_field[i]>>int_index & 1) == 1){
@@ -277,16 +269,15 @@ void parseDD(struct mem_and_buffer_and_sfd *params)
 void parseDDR(struct mem_and_buffer_and_sfd *params)
 {
 	int len = params->len;
-	char *buf = params->buf;
 
 	if(len!=2*sizeof(char)){
 		printf("INVALID DDR length!\n");
 	}
-	int source_id = (int)buf[1];
+	int source_id = (int)params->buf[1];
 	printf("received DDR from %d\n", source_id);
 
 	int dd_len;
 	char *dd = formDDPacket(params->mem, &dd_len);
 	sendToNeighbour(source_id, dd, dd_len, params->mem);
-	//free(dd);
+	free(dd);
 }
