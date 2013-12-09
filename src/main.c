@@ -47,7 +47,7 @@ int main(int argc, char** argv)
 	pthread_mutex_init(&p_mem->mutexes->connection_mutex, NULL);
 	pthread_mutex_init(&p_mem->mutexes->buffer_mutex, NULL);
 	initRouting(config_file_name, node_id, p_mem);
-	printf("Topology table size: %d\n", p_mem->p_topology->nodes_count);
+	//printf("Topology table size: %d\n", p_mem->p_topology->nodes_count);
 	showRoutingTable(p_mem);
 
 	startInterface(p_mem);
@@ -72,7 +72,7 @@ void startInterface(struct shared_mem *mem)
 		}else if(strcmp("r\n", buffer) == 0){
 			showRoutingTable(mem);
 		}else if(strcmp("s\n", buffer) == 0){
-			showStatusTable(mem->p_topology->nodes_count, mem->p_status_table);
+			showStatusTable(mem);
 		}else if(strcmp("b\n", buffer) == 0){
 			showUndeliveredMessages(mem);
 		}else{
