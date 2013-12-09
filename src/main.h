@@ -41,6 +41,7 @@ struct mem_and_buffer_and_sfd{
 	int len;
 	char *buf;
 	int sfd;
+	pthread_mutex_t mutex;
 	struct sockaddr *addr;
 	struct shared_mem *mem;
 };
