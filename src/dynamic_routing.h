@@ -5,6 +5,8 @@
 #include "main.h"
 #define OUT_CONN 1
 #define IN_CONN 0
+#define RETRY 0
+#define NORETRY 1
 
 struct real_connection{
 	char type;
@@ -27,7 +29,7 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem);
 void sendNSU(int id, int new_state, struct shared_mem *mem);
 void sendToNeighbours(int not_to, char *packet, int len, struct shared_mem *mem);
 void sendToNeighbour(int dest_id, char *packet, int len, struct shared_mem *p_mem);
-void sendToId(int id, char *packet, int len, struct shared_mem *mem);
+void sendToId(int dest_id, char *packet, int len, struct shared_mem *p_mem, int retry);
 
 
 #endif
