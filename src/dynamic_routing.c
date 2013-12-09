@@ -284,6 +284,8 @@ void satanKalous(void *param)
 
 	int i;
 	for(;;){
+		printf("SATAN KALOUS says: Let's check all the nodes!\n");
+
 		end = time(NULL);
 		for(i=MIN_ID; i<MAX_NODES; i++){
 			if(i==mem->local_id) continue;
@@ -300,6 +302,8 @@ void satanKalous(void *param)
 					reactToStateChange(i, OFFLINE, mem);
 					//printf("NODE %d went OFFLINE!!!\n", conns[i].id);
 				}
+				printf("SATAN KALOUS says: node %d is OK!\n", i);
+				
 			}else{
 				pthread_mutex_unlock(&(mem->mutexes->connection_mutex));
 			}
