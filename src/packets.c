@@ -150,8 +150,8 @@ void parseMsg(struct mem_and_buffer_and_sfd *params)
 	int dest_id = (int)params->buf[1];
 	int source_id = (int)params->buf[2];
 #ifdef DEBUG
-	printf("Received MSG from %d to %d:\n"
-			"%s\n", source_id, dest_id, params->buf+3);
+	//printf("Received MSG from %d to %d:\n"
+			//"%s\n", source_id, dest_id, params->buf+3);
 #endif
 	if(dest_id!=params->mem->local_id){
 #ifdef DEBUG
