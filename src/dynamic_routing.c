@@ -284,7 +284,7 @@ void satanKalous(void *param)
 
 	int i;
 	for(;;){
-		printf("SATAN KALOUS says: Let's check all the nodes!\n");
+		//printf("SATAN KALOUS says: Let's check all the nodes!\n");
 
 		end = time(NULL);
 		for(i=MIN_ID; i<MAX_NODES; i++){
@@ -302,7 +302,7 @@ void satanKalous(void *param)
 					reactToStateChange(i, OFFLINE, mem);
 					//printf("NODE %d went OFFLINE!!!\n", conns[i].id);
 				}
-				printf("SATAN KALOUS says: node %d is OK!\n", i);
+				//printf("SATAN KALOUS says: node %d is OK!\n", i);
 				
 			}else{
 				pthread_mutex_unlock(&(mem->mutexes->connection_mutex));
@@ -339,11 +339,6 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 
 
 
-	if(new_state == ONLINE && isNeighbour(mem->local_id, id, *(mem->p_topology))){
-		int len;
-		char *packet = formDDRequestPacket(mem->local_id, &len);
-		sendToNeighbour(id, packet, len, mem);
-	}
 	sendNSU(id, new_state, mem);
 
 	printf("NSU sent! :D\n");
@@ -359,9 +354,15 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 		pthread_mutex_unlock(&(mem->mutexes->status_mutex));
 		pthread_mutex_unlock(&(mem->mutexes->routing_mutex));
 	}
+	sleep(1);
+	if(new_state == ONLINE && isNeighbour(mem->local_id, id, *(mem->p_topology))){
+		int len;
+		char *packet = formDDRequestPacket(mem->local_id, &len);
+		sendToNeighbour(id, packet, len, mem);
+	}
 
 	//pthread_mutex_lock(&(mem->mutexes->buffer_mutex));
-	sleep(2);
+	//sleep(2);
 	resendUndeliveredMessages(id, mem);
 	//pthread_mutex_unlock(&(mem->mutexes->buffer_mutex));
 	/* FREE AS A BIRD!!! */
