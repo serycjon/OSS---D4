@@ -36,6 +36,6 @@ void showRoutingTable(struct shared_mem *mem);
 /* //discontinued
  * void setAddressById(int id, RoutingTableEntry* entry, Connections connections);
  */
-void showStatusTable(int status_table_size, NodeStatus* state_table);
+void showStatusTable(struct shared_mem *mem);
 
 #endif
