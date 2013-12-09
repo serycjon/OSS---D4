@@ -5,6 +5,13 @@
 #include "routing_table.h"
 #include "dynamic_routing.h"
 
+typedef struct undelivered_message {
+	int dest_id;
+	int len;
+	char* message;
+	struct undelivered_message *next;
+} UndeliveredMessage;
+
 struct shared_mem {
 	int local_id;
 	int local_port;
@@ -13,6 +20,8 @@ struct shared_mem {
 	RoutingTable *p_routing_table;
 	NodeStatus *p_status_table;
 	struct all_mutexes *mutexes;
+	UndeliveredMessage *buffer;
+	int buf_size;
 };
 
 
@@ -20,6 +29,7 @@ struct all_mutexes {
 	pthread_mutex_t routing_mutex;
 	pthread_mutex_t status_mutex;
 	pthread_mutex_t connection_mutex;
+	pthread_mutex_t buffer_mutex;
 };
 
 struct mem_and_sfd{
