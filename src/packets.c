@@ -157,7 +157,7 @@ void parseMsg(struct mem_and_buffer_and_sfd *params)
 #ifdef DEBUG
 		printf("I should send it elsewhere!\n");
 #endif
-		sendToId(dest_id, buf, params->len, params->mem);
+		sendToId(dest_id, buf, params->len, params->mem, RETRY);
 	} else {
 		printf("Received message from node #%d:\n", source_id);
 		printf("%s\n", buf+3);
@@ -253,10 +253,7 @@ void parseDD(struct mem_and_buffer_and_sfd *params)
 		}
 	}
 	if(changed>0){
-	//	RoutingTable *new_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
 		createRoutingTable (params->mem);
-		//RoutingTable *old_routing_table = mem->p_routing_table;
-	//	params->mem->p_routing_table = new_routing_table;
 	}
 }
 
