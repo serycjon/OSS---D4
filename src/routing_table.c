@@ -86,12 +86,12 @@ void createRoutingTable (struct shared_mem *p_mem)
 	pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));
 	p_mem->p_routing_table->table = (RoutingTableEntry*) calloc((p_mem->p_topology->nodes_count+1), sizeof(RoutingTableEntry));
 	p_mem->p_routing_table->size = p_mem->p_topology->nodes_count;
-	pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
+	//pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 	int visited_nodes, i, last;
 	last = 0;
 	visited_nodes = 0;
 
-	pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));
+	//pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));
 	for(i=0; i<p_mem->p_topology->nodes_count+1;i++){
 		//RoutingTableEntry no_path;
 		//no_path.next_hop_port = -1;
@@ -99,32 +99,31 @@ void createRoutingTable (struct shared_mem *p_mem)
 		//strcpy(no_path.next_hop_ip, "none");
 		p_mem->p_routing_table->table[i].next_hop_id = NOT_VISITED;
 	}
-	pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
+	//pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 
 	// routing to myself probably won't be needed
 	RoutingTableEntry first_node;		//add IP and port!
 	//setAddressById(p_mem->locad_ID, &first_node, connections);
 	first_node.next_hop_id = p_mem->local_id;
-	pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));
+	//pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));
 	p_mem->p_routing_table->table[idToIndex(p_mem->local_id)] = first_node; 
-	pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
+	//pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 
 	for(i=0; i<p_mem->p_topology->neighbors_counts[idToIndex(p_mem->local_id)]; i++){			//adding close neighbors into queue and routing_table
 		int new_node_ID  = indexToId(p_mem->p_topology->table[idToIndex(p_mem->local_id)][i]);
 		pthread_mutex_lock(&(p_mem->mutexes->status_mutex));		
-		pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));		
+		//pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));		
 		if(p_mem->p_status_table[idToIndex(new_node_ID)] == ONLINE &&
 				p_mem->p_routing_table->table[idToIndex(new_node_ID)].next_hop_id == NOT_VISITED){
 			QueueEntry new;
 			RoutingTableEntry new_entry; //add IP and port!
 			new_entry.next_hop_id = new_node_ID;
-			//setAddressById(new_node_ID, &new_entry, connections);
 			new.final_node_ID=new_node_ID;
 			new.first_hop_node_ID = new_node_ID;	
 			queue[last++] = new;
 			p_mem->p_routing_table->table[idToIndex(new_node_ID)] = new_entry;
 		}
-		pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
+		//pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 		pthread_mutex_unlock(&(p_mem->mutexes->status_mutex));
 	}
 
@@ -136,7 +135,7 @@ void createRoutingTable (struct shared_mem *p_mem)
 		for(i=0; i<p_mem->p_topology->neighbors_counts[idToIndex(actual_node_ID)]; i++){	//check actual node neighbors
 			int new_node_ID  = indexToId(p_mem->p_topology->table[idToIndex(actual_node_ID)][i]);
 			pthread_mutex_lock(&(p_mem->mutexes->status_mutex));
-			pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));	
+			//pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));	
 			if(p_mem->p_routing_table->table[idToIndex(new_node_ID)].next_hop_id == NOT_VISITED && p_mem->p_status_table[idToIndex(new_node_ID)] == ONLINE){
 #ifdef DEBUG
 				printf("debug: discovered it's neighbor %d\n", new_node_ID);
@@ -144,13 +143,12 @@ void createRoutingTable (struct shared_mem *p_mem)
 				QueueEntry new;
 				RoutingTableEntry new_entry; //add IP and port!
 				new_entry.next_hop_id = queue[visited_nodes].first_hop_node_ID;
-				//setAddressById(queue[visited_nodes].first_hop_node_ID, &new_entry, connections);
 				new.final_node_ID=new_node_ID;
 				new.first_hop_node_ID = queue[visited_nodes].first_hop_node_ID;
 				queue[last++] = new;
 				p_mem->p_routing_table->table[idToIndex(new_node_ID)] = new_entry;
 			}	
-			pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
+			//pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 			pthread_mutex_unlock(&(p_mem->mutexes->status_mutex));		
 		}
 		visited_nodes++;
@@ -159,7 +157,7 @@ void createRoutingTable (struct shared_mem *p_mem)
 	free(queue);
 	queue = NULL;
 
-	pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));
+	//pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));
 	p_mem->p_routing_table->table[idToIndex(p_mem->local_id)].next_hop_id = NOT_VISITED;
 	pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 
