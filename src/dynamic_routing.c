@@ -346,23 +346,24 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 	}
 	sendNSU(id, new_state, mem);
 
+	printf("NSU sent! :D\n");
 	if(new_state == OFFLINE){
 		int i;
 		pthread_mutex_lock(&(mem->mutexes->routing_mutex));
+		pthread_mutex_lock(&(mem->mutexes->status_mutex));				
 		for(i=0; i<mem->p_routing_table->size; i++){
 			if(i!=mem->local_id && mem->p_routing_table->table[i].next_hop_id == -1){
-				pthread_mutex_lock(&(mem->mutexes->status_mutex));				
 				mem->p_status_table[i] = OFFLINE;
-				pthread_mutex_unlock(&(mem->mutexes->status_mutex));
 			}
 		}
+		pthread_mutex_unlock(&(mem->mutexes->status_mutex));
 		pthread_mutex_unlock(&(mem->mutexes->routing_mutex));
 	}
 
-	pthread_mutex_lock(&(mem->mutexes->buffer_mutex));
+	//pthread_mutex_lock(&(mem->mutexes->buffer_mutex));
 	sleep(2);
 	resendUndeliveredMessages(id, mem);
-	pthread_mutex_unlock(&(mem->mutexes->buffer_mutex));
+	//pthread_mutex_unlock(&(mem->mutexes->buffer_mutex));
 	/* FREE AS A BIRD!!! */
 	//free(old_routing_table);
 #ifdef DEBUG
