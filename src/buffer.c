@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include <stdio.h>
 #include "buffer.h"
 
@@ -84,6 +85,7 @@ void addWaitingMessage(int dest_id, int len, char* msg, struct shared_mem *mem)
 	showUndeliveredMessage(new);
 #endif
 
+	pthread_mutex_lock(&(mem->mutexes->buffer_mutex));
 	if(mem->buf_size == 0){
 		mem->buffer = new;
 		mem->buf_size++;
@@ -98,6 +100,7 @@ void addWaitingMessage(int dest_id, int len, char* msg, struct shared_mem *mem)
 
 		//linkListHeadInsert
 	} 
+	pthread_mutex_unlock(&(mem->mutexes->buffer_mutex));
 }
 
 
