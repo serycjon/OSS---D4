@@ -160,8 +160,10 @@ void parseMsg(struct mem_and_buffer_and_sfd *params)
 #endif
 		sendToId(dest_id, buf, params->len, params->mem, RETRY);
 	} else {
+		printf("-----------\n");
 		printf("Received message from node #%d:\n", source_id);
 		printf("%s\n", buf+3);
+		printf("-----------\n");
 	}
 	//free(params);
 }
@@ -176,6 +178,7 @@ void parseHello(struct mem_and_buffer_and_sfd *params)
 	}
 	int source_id = (int)buf[1];
 	//printf("Got hello from %d\n", source_id);
+	pthread_mutex_lock(&(params->mem->mutexes->connection_mutex));
 	struct real_connection *conn = &(params->mem->p_connections[source_id]);
 	conn->type = IN_CONN;
 	conn->id = source_id;
@@ -183,6 +186,7 @@ void parseHello(struct mem_and_buffer_and_sfd *params)
 	conn->sockfd = params->sfd;
 	conn->last_seen = time(NULL);
 	conn->online = ONLINE;
+	pthread_mutex_unlock(&(params->mem->mutexes->connection_mutex));
 	//if(conn->online==OFFLINE){
 	reactToStateChange(source_id, ONLINE, params->mem);
 	//}
@@ -248,8 +252,9 @@ void parseDD(struct mem_and_buffer_and_sfd *params)
 				       }else{
 						pthread_mutex_unlock(&(params->mem->mutexes->status_mutex));
 					}
+				}else{
+					pthread_mutex_unlock(&(params->mem->mutexes->status_mutex));
 				}
-				pthread_mutex_unlock(&(params->mem->mutexes->status_mutex));
 			}
 		}
 	}
