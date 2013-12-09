@@ -106,18 +106,19 @@ int inInit(void* mem)
 		memcpy(addr_cpy->sa_data, ((struct sockaddr *)&their_addr)->sa_data, sizeof(((struct sockaddr *)&their_addr)->sa_data));
 
 		char *buf_cpy = (char *) calloc((numbytes), sizeof(char));
-		
 		memcpy(buf_cpy, buf, (numbytes)*sizeof(char));
-		struct mem_and_buffer_and_sfd param;
-		pthread_mutex_init(&param.mutex, NULL);
-		param.buf = buf_cpy;
-		param.len = numbytes;
-		param.mem = (struct shared_mem *) mem;
-		param.sfd = sockfd;
-		param.addr = addr_cpy;
+
+		struct mem_and_buffer_and_sfd *param = (struct mem_and_buffer_and_sfd *) calloc(1, sizeof(struct mem_and_buffer_and_sfd));
+		// remove???
+		pthread_mutex_init(&param->mutex, NULL);
+		param->buf = buf_cpy;
+		param->len = numbytes;
+		param->mem = (struct shared_mem *) mem;
+		param->sfd = sockfd;
+		param->addr = addr_cpy;
 		
 		pthread_t parse_thread;
-		pthread_create(&parse_thread, NULL, (void*) &packetParser, (void*) &param); 
+		pthread_create(&parse_thread, NULL, (void*) &packetParser, (void*) param); 
 		pthread_detach(parse_thread);
 
 	}
@@ -236,21 +237,18 @@ void sockListener(void *in_param)
 			continue;               /* Ignore failed request */
 		}
 
-// 		char *buf_cpy = (char *) malloc((numbytes+1) * sizeof(char));
-		//memcpy(buf_cpy, buf, (numbytes+1)*sizeof(char));
-
 		char *buf_cpy = (char *) calloc((nread), sizeof(char));
 		memcpy(buf_cpy, buf, (nread)*sizeof(char));
 		//printf("size: %zd\n", nread);
-		struct mem_and_buffer_and_sfd param;
-		param.buf = buf_cpy;
-		param.len = nread;
-		param.mem = ((struct mem_and_sfd *)in_param)->mem;
-		param.sfd = sfd;
-		param.addr = (struct sockaddr *)&peer_addr;
+		struct mem_and_buffer_and_sfd *param = (struct mem_and_buffer_and_sfd *) calloc(1, sizeof(struct mem_and_buffer_and_sfd));
+		param->buf = buf_cpy;
+		param->len = nread;
+		param->mem = ((struct mem_and_sfd *)in_param)->mem;
+		param->sfd = sfd;
+		param->addr = (struct sockaddr *)&peer_addr;
 
 		pthread_t parse_thread;
-		pthread_create(&parse_thread, NULL, (void*) &packetParser, (void*) &param); 
+		pthread_create(&parse_thread, NULL, (void*) &packetParser, (void*) param); 
 		pthread_join(parse_thread, NULL);
 
 		//free(buf_cpy);
