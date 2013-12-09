@@ -14,6 +14,7 @@
 #include "main.h"
 #include "packets.h"
 #include "topology.h"
+#include "buffer.h"
 
 #define MAXBUFLEN 100
 
@@ -323,12 +324,13 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 #ifdef DEBUG
 	showStatusTable(mem->p_topology->nodes_count, mem->p_status_table);
 #endif
-//	RoutingTable *new_routing_table = (RoutingTable *) malloc(sizeof(RoutingTable));
-//	pthread_mutex_lock(&(mem->mutexes->routing_mutex));
+
 	createRoutingTable (mem);
-	//RoutingTable *old_routing_table = mem->p_routing_table;
-//	mem->p_routing_table = new_routing_table;	
-//	pthread_mutex_unlock(&(mem->mutexes->routing_mutex));
+
+	pthread_mutex_lock(&(mem->mutexes->buffer_mutex));
+	resendUndeliveredMessages(id, mem);
+	pthread_mutex_unlock(&(mem->mutexes->buffer_mutex));
+
 
 	if(new_state == ONLINE && isNeighbour(mem->local_id, id, *(mem->p_topology))){
 		int len;
@@ -393,11 +395,11 @@ void sendToNeighbour(int dest_id, char *packet, int len, struct shared_mem *p_me
 	pthread_mutex_unlock(&(p_mem->mutexes->connection_mutex));
 }
 
-void sendToId(int dest_id, char *packet, int len, struct shared_mem *p_mem)
+void sendToId(int dest_id, char *packet, int len, struct shared_mem *p_mem, int retry)
 {
 	pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));
-	if(dest_id >= p_mem->p_routing_table->size){
-		printf("cannot reach node %d\n", dest_id);
+	if(dest_id > p_mem->p_routing_table->size){
+		printf("cannot reach node %d -- ID too big!\n", dest_id);
 		pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
 		return;
 	}else{
@@ -410,8 +412,15 @@ void sendToId(int dest_id, char *packet, int len, struct shared_mem *p_mem)
 	pthread_mutex_lock(&(p_mem->mutexes->routing_mutex));
 	int next_id = p_mem->p_routing_table->table[idToIndex(dest_id)].next_hop_id;
 	if(next_id==-1){
+		printf("TODO: diff between totally unreachable and tmporarily unreachable node!\n");
 		printf("cannot reach node %d\n", dest_id);
 		pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
+
+		if(retry==RETRY){
+			pthread_mutex_lock(&(p_mem->mutexes->buffer_mutex));
+			addWaitingMessage(dest_id, len, packet, p_mem);;
+			pthread_mutex_unlock(&(p_mem->mutexes->buffer_mutex));
+		}
 		return;
 	}else{
 		pthread_mutex_unlock(&(p_mem->mutexes->routing_mutex));
