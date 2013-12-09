@@ -8,6 +8,7 @@
 #include "packets.h"
 #include "main.h"
 #include "topology.h"
+#include "buffer.h"
 
 void printbincharpad(char c)
 {
@@ -254,6 +255,17 @@ void parseDD(struct mem_and_buffer_and_sfd *params)
 	}
 	if(changed>0){
 		createRoutingTable (params->mem);
+
+		pthread_mutex_lock(&(params->mem->mutexes->buffer_mutex));
+#ifdef DEBUG
+		showUndeliveredMessages(params->mem);
+		printf("trying to resend them all\n");
+#endif
+		resendUndeliveredMessages(ALL, params->mem);
+#ifdef DEBUG
+		printf("trying to resend them all end\n");
+#endif
+		pthread_mutex_unlock(&(params->mem->mutexes->buffer_mutex));
 	}
 }
 
