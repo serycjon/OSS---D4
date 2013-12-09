@@ -109,6 +109,7 @@ int inInit(void* mem)
 		
 		memcpy(buf_cpy, buf, (numbytes)*sizeof(char));
 		struct mem_and_buffer_and_sfd param;
+		pthread_mutex_init(&param.mutex, NULL);
 		param.buf = buf_cpy;
 		param.len = numbytes;
 		param.mem = (struct shared_mem *) mem;
@@ -332,9 +333,6 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 
 	createRoutingTable (mem);
 
-	pthread_mutex_lock(&(mem->mutexes->buffer_mutex));
-	resendUndeliveredMessages(id, mem);
-	pthread_mutex_unlock(&(mem->mutexes->buffer_mutex));
 
 
 	if(new_state == ONLINE && isNeighbour(mem->local_id, id, *(mem->p_topology))){
@@ -356,6 +354,11 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 		}
 		pthread_mutex_unlock(&(mem->mutexes->routing_mutex));
 	}
+
+	pthread_mutex_lock(&(mem->mutexes->buffer_mutex));
+	sleep(2);
+	resendUndeliveredMessages(id, mem);
+	pthread_mutex_unlock(&(mem->mutexes->buffer_mutex));
 	/* FREE AS A BIRD!!! */
 	//free(old_routing_table);
 #ifdef DEBUG
