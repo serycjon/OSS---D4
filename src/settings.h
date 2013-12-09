@@ -13,6 +13,7 @@
 #define DEATH_TIMER 3
 
 #define BUF_SIZE 200
+#define RESEND_BUFFER_SIZE 5
 
 #define IP_ADDRESS_MAX_LENGTH 16
 #endif
