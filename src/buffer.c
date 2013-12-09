@@ -1,26 +1,23 @@
-#include<stdlib.h>
+#include <stdlib.h>
 #include <string.h>
-#include<stdio.h>
+#include <stdio.h>
+#include "buffer.h"
 
-#define RESEND_BUFFER_SIZE 5
 
-typedef struct undelivered_message {
-	int dest_id;
-	int len;
-	char* message;
-	struct undelivered_message *next;
-} UndeliveredMessage;
 
-struct shared_mem{
-	int buf_size;
-	UndeliveredMessage *buffer;
-};
+// struct shared_mem{
+// 	int buf_size;
+// 	UndeliveredMessage *buffer;
+// };
 
-void showUndeliveredMessage(UndeliveredMessage *ptr){
+void showUndeliveredMessage(UndeliveredMessage *ptr)
+{
 	if(ptr==NULL) return;
-	printf("dest_id: %d\tmsg: %s\n", ptr->dest_id, ptr->message);
+	printf("dest_id: %d\tmsg (%d bytes): %s\n", ptr->dest_id, ptr->len, ptr->message);
 }
-void showUndeliveredMessages(struct shared_mem *mem){
+
+void showUndeliveredMessages(struct shared_mem *mem)
+{
 	printf("-----------\n");
 	printf("Undelivered messages buffer:\n");
 	printf("-----------\n");
@@ -33,13 +30,17 @@ void showUndeliveredMessages(struct shared_mem *mem){
 	printf("-----------\n");
 }
 
-void resendUndeliveredMessages(int to_id, struct shared_mem *mem){
+void resendUndeliveredMessages(int to_id, struct shared_mem *mem)
+{
 	UndeliveredMessage **ptr = &(mem->buffer);
 
 
 	while(*ptr != NULL){
 		if((*ptr)->dest_id == to_id){
 			//send
+			sendToId(to_id, (*ptr)->message, (*ptr)->len, mem, NORETRY);
+
+			//delete from buffer
 			printf("will delete this msg(sent): ");
 			showUndeliveredMessage(*ptr);
 			UndeliveredMessage *old = ((*ptr));
@@ -53,7 +54,8 @@ void resendUndeliveredMessages(int to_id, struct shared_mem *mem){
 	}
 }
 
-void deleteOldMessage(struct shared_mem *mem){
+void deleteOldMessage(struct shared_mem *mem)
+{
 	UndeliveredMessage **ptr = &(mem->buffer->next);
 	while((*ptr)->next != NULL) ptr = &(*ptr)->next; // move to the end
 	printf("will delete: ");
@@ -63,7 +65,9 @@ void deleteOldMessage(struct shared_mem *mem){
 	(*ptr) = NULL;
 	mem->buf_size--;
 }
-void addWaitingMessage(int dest_id, int len, char* msg, struct shared_mem *mem){
+
+void addWaitingMessage(int dest_id, int len, char* msg, struct shared_mem *mem)
+{
 	UndeliveredMessage *new = (UndeliveredMessage *)malloc(sizeof(UndeliveredMessage));
 	new->dest_id = dest_id;
 	new->len = len;
@@ -92,7 +96,11 @@ void addWaitingMessage(int dest_id, int len, char* msg, struct shared_mem *mem){
 
 
 
-int main(){
+// not needed
+
+
+int test()
+{
 	struct shared_mem *mem = (struct shared_mem *) malloc(sizeof(struct shared_mem));
 	mem->buffer = NULL;
 	mem->buf_size = 0;
