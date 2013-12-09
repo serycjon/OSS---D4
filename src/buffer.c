@@ -36,6 +36,7 @@ void showUndeliveredMessages(struct shared_mem *mem)
 
 void resendUndeliveredMessages(int to_id, struct shared_mem *mem)
 {
+	pthread_mutex_lock(&(mem->mutexes->buffer_mutex));
 	UndeliveredMessage **ptr = &(mem->buffer);
 
 	while(*ptr != NULL){
@@ -44,6 +45,7 @@ void resendUndeliveredMessages(int to_id, struct shared_mem *mem)
 			if(sendToId((*ptr)->dest_id, (*ptr)->message, (*ptr)->len, mem, NORETRY) == -1){
 				continue;
 			}
+			sleep(1);
 
 			//delete from buffer
 // #ifdef DEBUG
@@ -53,15 +55,14 @@ void resendUndeliveredMessages(int to_id, struct shared_mem *mem)
 			UndeliveredMessage *old = ((*ptr));
 			*ptr = (*ptr)->next;
 
-			pthread_mutex_lock(&(mem->mutexes->buffer_mutex));
 			free(old->message);
 			free(old);
 			mem->buf_size--;
-			pthread_mutex_unlock(&(mem->mutexes->buffer_mutex));
 		}else{
 			ptr = &(*ptr)->next;
 		}
 	}
+	pthread_mutex_unlock(&(mem->mutexes->buffer_mutex));
 }
 
 void deleteOldMessage(struct shared_mem *mem)
