@@ -46,7 +46,7 @@ void resendUndeliveredMessages(int to_id, struct shared_mem *mem)
 				ptr = &(*ptr)->next;
 				continue;
 			}
-			sleep(1);
+			//sleep(1);
 
 			//delete from buffer
 // #ifdef DEBUG
