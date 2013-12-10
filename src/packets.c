@@ -225,7 +225,7 @@ void parseDD(struct mem_and_buffer_and_sfd *params)
 	int i, found, int_index;
 
 	printf("received DD packet\n");
-	for(i=0; i<33;i++){
+	for(i=0; i<32;i++){
 		//printf("%u; ", (unsigned char) params->buf[i]);
 		bit_field[i] = (unsigned char) params->buf[i+1]; // first byte is packet's TYPE
 	}
