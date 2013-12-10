@@ -22,7 +22,7 @@ typedef struct local_connections{
 } Connections, *pConnections;
 
 
-int parseRouteConfiguration(char* file_name, int local_id, int* local_port, pConnections p_all_connections, pConnections p_local_connections, TopologyTable* p_topology);
+int parseRouteConfiguration(char* file_name, int local_id, int* local_port, pConnections p_local_connections, TopologyTable* p_topology);
 void showConnections(Connections conns);
 #endif
 

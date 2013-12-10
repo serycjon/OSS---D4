@@ -43,7 +43,7 @@ void mallocCheck(void* pointer){
 }
 
 int parseRouteConfiguration(char* file_name, int local_id, int* local_port, 
-		pConnections p_bidir_connections, pConnections p_local_connections, TopologyTable* p_topology)
+		pConnections p_local_connections, TopologyTable* p_topology)
 {
 	int all_connections_count = 0;
 	TConnection all_connections[MAX_LINKS];
@@ -66,10 +66,6 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 	int* local_connection_count = &(p_local_connections->count);
 	TConnection* local_connections = (p_local_connections->array);
 	*local_connection_count = 0;
-
-	int* bidir_connection_count = &(p_bidir_connections->count);
-	TConnection* bidir_connections = (p_bidir_connections->array);
-	*bidir_connection_count = 0;
 
 	int result;
 	if (local_port) *local_port = -1;
@@ -143,15 +139,6 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 						for (i=0; i<all_connections_count; i++) {
 							if (all_connections[i].id == id_server) {
 								local_connections[(*local_connection_count)++] = all_connections[i];
-								bidir_connections[(*bidir_connection_count)++] = all_connections[i];
-							}
-						}
-					}
-					if (id_server == local_id) {
-						int i;
-						for (i=0; i<all_connections_count; i++) {
-							if (all_connections[i].id == id_client) {
-								bidir_connections[(*bidir_connection_count)++] = all_connections[i];
 							}
 						}
 					}
@@ -169,10 +156,6 @@ int parseRouteConfiguration(char* file_name, int local_id, int* local_port,
 			}
 		}
 		
-		// printf("bidir:\n");
-		// showConnections(*p_bidir_connections);
-		// printf("local:\n");
-		// showConnections(*p_local_connections);
 		fclose(f);
 	} else {
 		fprintf(stderr, "CFG_PARSER: [ERROR] can not open file '%s'\n", file_name);

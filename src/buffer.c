@@ -5,32 +5,25 @@
 #include <stdio.h>
 #include "buffer.h"
 
-
-
-// struct shared_mem{
-// 	int buf_size;
-// 	UndeliveredMessage *buffer;
-// };
-
 void showUndeliveredMessage(UndeliveredMessage *ptr)
 {
 	if(ptr==NULL) return;
-	printf("dest_id: %d\tmsg (%d bytes): %s\n", ptr->dest_id, ptr->len, ptr->message);
+	fprintf(stderr, "dest_id: %d\tmsg (%d bytes): %s\n", ptr->dest_id, ptr->len, ptr->message+3);
 }
 
 void showUndeliveredMessages(struct shared_mem *mem)
 {
 	pthread_mutex_lock(&(mem->mutexes->buffer_mutex));
-	printf("-----------\n");
-	printf("Undelivered messages buffer:\n");
-	printf("-----------\n");
+	fprintf(stderr, "-----------\n");
+	fprintf(stderr,"Undelivered messages buffer:\n");
+	fprintf(stderr,"-----------\n");
 	UndeliveredMessage *ptr = mem->buffer;
 
 	while(ptr!=NULL){
 		showUndeliveredMessage(ptr);
 		ptr = ptr->next;
 	}
-	printf("-----------\n");
+	fprintf(stderr,"-----------\n");
 	pthread_mutex_unlock(&(mem->mutexes->buffer_mutex));
 }
 
@@ -44,15 +37,15 @@ void resendUndeliveredMessages(int to_id, struct shared_mem *mem)
 			//send
 			if(sendToId((*ptr)->dest_id, (*ptr)->message, (*ptr)->len, mem, NORETRY) == -1){
 				ptr = &(*ptr)->next;
+				//leave in buffer if send wasn't successful.
 				continue;
 			}
-			//sleep(1);
-
 			//delete from buffer
-// #ifdef DEBUG
-			printf("will delete this msg(sent): ");
+#ifdef DEBUG
+			fprintf(stderr,"will delete this msg(sent): ");
 			showUndeliveredMessage(*ptr);
-// #endif
+#endif
+
 			UndeliveredMessage *old = ((*ptr));
 			*ptr = (*ptr)->next;
 
@@ -71,7 +64,7 @@ void deleteOldMessage(struct shared_mem *mem)
 	UndeliveredMessage **ptr = &(mem->buffer->next);
 	while((*ptr)->next != NULL) ptr = &(*ptr)->next; // move to the end
 #ifdef DEBUG
-	printf("will delete: ");
+	fprintf(stderr,"will delete (buffer full): ");
 	showUndeliveredMessage(*ptr);
 #endif
 	free((*ptr)->message);
@@ -83,6 +76,7 @@ void deleteOldMessage(struct shared_mem *mem)
 void addWaitingMessage(int dest_id, int len, char* msg, struct shared_mem *mem)
 {
 	UndeliveredMessage *new = (UndeliveredMessage *)malloc(sizeof(UndeliveredMessage));
+	// prepare the message
 	new->dest_id = dest_id;
 	new->len = len;
 	new->message = (char *)calloc(len, sizeof(char));
@@ -90,7 +84,7 @@ void addWaitingMessage(int dest_id, int len, char* msg, struct shared_mem *mem)
 	new->next = NULL;
 
 #ifdef DEBUG
-	printf("adding: ");
+	fprintf(stderr,"adding into buffer: ");
 	showUndeliveredMessage(new);
 #endif
 
@@ -106,37 +100,6 @@ void addWaitingMessage(int dest_id, int len, char* msg, struct shared_mem *mem)
 		new->next = old;
 		mem->buffer = new;
 		mem->buf_size++;
-
-		//linkListHeadInsert
 	} 
 	pthread_mutex_unlock(&(mem->mutexes->buffer_mutex));
-}
-
-
-
-// not needed
-
-
-int test()
-{
-	struct shared_mem *mem = (struct shared_mem *) malloc(sizeof(struct shared_mem));
-	mem->buffer = NULL;
-	mem->buf_size = 0;
-
-	char *msg = "Ahoj!";
-	char *msg2 = "nazdar!";
-	char *msg3 = "cauky!";
-	char *msg4 = "jupii!";
-	//UndeliveredMessage *head = (UndeliveredMessage *)malloc(sizeof(UndeliveredMessage));
-	
-	addWaitingMessage(2, strlen(msg4), msg4, mem);
-	addWaitingMessage(1, strlen(msg), msg, mem);
-	addWaitingMessage(2, strlen(msg3), msg3, mem);
-	addWaitingMessage(2, strlen(msg2), msg2, mem);
-
-	//addWaitingMessage(1, strlen(msg), msg, mem);
-	showUndeliveredMessages(mem);
-	resendUndeliveredMessages(2, mem);
-	showUndeliveredMessages(mem);
-	return 0;
 }

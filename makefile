@@ -5,8 +5,8 @@ BIN=./bin
 
 all: main
 
-main: $(SRC)/main.c $(SRC)/routing_table.c $(SRC)/topology.c $(SRC)/route_cfg_parser.c $(SRC)/dynamic_routing.c $(SRC)/packets.c $(SRC)/buffer.c
-	gcc $(GCC_OPTIONS) $(SRC)/main.c $(SRC)/routing_table.c $(SRC)/topology.c \
+main: $(SRC)/main.c $(SRC)/network.c $(SRC)/routing_table.c $(SRC)/topology.c $(SRC)/route_cfg_parser.c $(SRC)/dynamic_routing.c $(SRC)/packets.c $(SRC)/buffer.c 
+	gcc $(GCC_OPTIONS) $(SRC)/main.c $(SRC)/network.c $(SRC)/routing_table.c $(SRC)/topology.c \
 		$(SRC)/dynamic_routing.c $(SRC)/route_cfg_parser.c $(SRC)/packets.c \
 		$(SRC)/buffer.c -o $(BIN)/main -lpthread
 

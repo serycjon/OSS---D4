@@ -13,6 +13,7 @@
 #define DEATH_TIMER 3
 
 #define BUF_SIZE 200
+#define MAX_MSG_LEN 150
 #define RESEND_BUFFER_SIZE 5
 
 //#define DEBUG 1
