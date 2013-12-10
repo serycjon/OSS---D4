@@ -352,8 +352,9 @@ void reactToStateChange(int id, int new_state, struct shared_mem *mem)
 		pthread_mutex_unlock(&(mem->mutexes->status_mutex));
 		pthread_mutex_unlock(&(mem->mutexes->routing_mutex));
 	}
-	sleep(1);
+	//sleep(1);
 	if(new_state == ONLINE && isNeighbour(mem->local_id, id, *(mem->p_topology))){
+		sleep(1);
 		int len;
 		char *packet = formDDRequestPacket(mem->local_id, &len);
 		sendToNeighbour(id, packet, len, mem);
