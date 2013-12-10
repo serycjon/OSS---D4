@@ -135,9 +135,9 @@ void packetParser(void *parameter)
 		default:
 			printf("INVALID TYPE!!! (%d)\n", type);
 	}
-	//free(params->buf);
-	//params->buf = NULL;
-	//free(parameter);
+	free(params->buf);
+	params->buf = NULL;
+	free(parameter);
 }
 
 void parseMsg(struct mem_and_buffer_and_sfd *params)
