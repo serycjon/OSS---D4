@@ -144,6 +144,7 @@ void packetParser(void *parameter)
 	}
 	free(params->buf);
 	params->buf = NULL;
+
 	free(parameter);
 }
 
