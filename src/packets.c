@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <inttypes.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -31,34 +32,40 @@ char *formDDRequestPacket(int source_id, int *len)
 
 char *formDDPacket(struct shared_mem *p_mem, int *len)
 {
-	uint32_t mask = 1 << 31; // only MSB is set
-	uint32_t bit_field[8]; // we need 8*32 bits
+	unsigned char mask = 1 << 7; // only MSB is set
+	unsigned char bit_field[32]; // we need 8*32 bits
 	int i, bit_field_index, int_index;
-	for(i=0; i < 8;   i++){
+	for(i=0; i < 32;   i++){
 		bit_field[i] = 0; // better safe than sorry. probably isn't necessary
 	}
 
 	for(i=0; i < MAX_NODES+1; i++){
 		pthread_mutex_lock(&(p_mem->mutexes->status_mutex));
 		if(p_mem->p_status_table[i] == ONLINE){
-			//printf("neco tu mame!\n");
-			bit_field_index = i/32;
-			int_index = i%32;
+			//printf("neco tu mame %d!\n", i);
+			bit_field_index = i/8;
+			int_index = i%8;
 			bit_field[bit_field_index] |= mask >> int_index;
 		}
 		pthread_mutex_unlock(&(p_mem->mutexes->status_mutex));
 	}
-
-
-	//printf("bits of first part %u\n", bit_field[0]);
+	// printf("bitfield: \n");
+	// for(i=0; i<32; i++){
+	// 	printf("%u, ", bit_field[i]);
+	// }
+	// printf("\n");
 
 	char *msg = (char *) calloc(33, sizeof(char));
 	msg[0] = T_DD;
-	for(i=0; i<8; i++){
-		int index = 1+(i*4);
-		//*(msg+index) = bit_field[i];
-		*(msg+index) = htonl(bit_field[i]);
+	for(i=0; i<32; i++){
+		int index = 1+i;
+		*(msg+index) = bit_field[i];
 	}
+	//printf("will send: \n");
+	//for(i=0; i<33;i++){
+	//	printf("%d; ", (char) msg[i]);
+	//}
+	//printf("\nthat's it\n");
 	//printbincharpad(msg[1]);
 	*len = 8*4 + 1;
 	return msg;
@@ -213,21 +220,26 @@ void parseNSU(struct mem_and_buffer_and_sfd *params)
 
 void parseDD(struct mem_and_buffer_and_sfd *params)
 {
-	uint32_t bit_field[8]; // we need 8*32 bits
+	unsigned char bit_field[32]; // we need 8*32 bits
 	int len = params->len;
+	int i, found, int_index;
 
 	printf("received DD packet\n");
+	for(i=0; i<33;i++){
+		//printf("%u; ", (unsigned char) params->buf[i]);
+		bit_field[i] = (unsigned char) params->buf[i+1]; // first byte is packet's TYPE
+	}
+	//printf("\nthat's it\n");
 	if(len!=33*sizeof(char)){
 		printf("INVALID DD length! (%d)\n", len);
 	}
-	int i, found, int_index;
 	int changed = 0;
-	for(i=0; i < 8;   i++){
-		bit_field[i] = ntohl(*(params->buf+1+i*4));
 
-		for(int_index = 31; int_index > 0; int_index--){
+	for(i=0; i < 32;   i++){
+		for(int_index = 7; int_index >= 0; int_index--){
 			if((bit_field[i]>>int_index & 1) == 1){
-				found = i*32 +31- int_index;
+				//printf("???\n");
+				found = i*8 +7- int_index;
 				pthread_mutex_lock(&(params->mem->mutexes->status_mutex));
 				if(params->mem->p_status_table[found] == OFFLINE){
 					if(!isNeighbour(params->mem->local_id, found, *(params->mem->p_topology))){
