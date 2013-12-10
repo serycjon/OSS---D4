@@ -221,6 +221,7 @@ void parseDD(struct mem_and_buffer_and_sfd *params)
 				if(params->mem->p_status_table[found] == OFFLINE){
 					if(!isNeighbour(params->mem->local_id, found, *(params->mem->p_topology))){
 					        DBG("parseDD: according to DD %d is ONLINE", found);
+						fprintf(stderr,"NODE %d WENT ONLINE!\n", found);
 					        changed++;
 					        params->mem->p_status_table[found] = ONLINE;
 

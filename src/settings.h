@@ -9,8 +9,10 @@
 #define MAX_NODES (MAX_ID - MIN_ID)
 #define MAX_LINKS 1000
 #define MAX_CONNECTIONS 8
+
 #define HELLO_TIMER 1
 #define DEATH_TIMER 3
+#define DDR_TIMER 30
 
 #define BUF_SIZE 200
 #define MAX_MSG_LEN 150

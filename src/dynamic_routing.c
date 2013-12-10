@@ -33,6 +33,20 @@ void helloSender(void *param)
 	}
 }
 
+void ddrSender(void *param)
+{
+	struct shared_mem *mem = (struct shared_mem*) param;
+	int len;
+	char *msg = formDDRequestPacket(mem->local_id, &len);
+
+	for(;;){
+		sleep(DDR_TIMER);
+		// 0 ~ send really to all neighbours
+		DBG("helloSender: saying hello!");
+		sendToNeighbours(0, msg, len, mem);
+	}
+}
+
 void deathChecker(void *param)
 {
 	struct shared_mem *mem = ((struct shared_mem*) param);

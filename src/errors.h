@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 
+#include "settings.h"
+
 #ifdef DEBUG
 #define DBG(fmt, ...) fprintf(stderr, "debug: " fmt "\n", ##__VA_ARGS__)
 #else

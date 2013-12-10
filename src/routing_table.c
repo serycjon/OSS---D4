@@ -69,6 +69,9 @@ int initRouting(char* filename, int local_id, struct shared_mem *p_mem)
 	pthread_t death_checker_thread;
 	pthread_create(&death_checker_thread, NULL, (void*) &deathChecker, (void*) p_mem);
 
+	pthread_t ddr_sender_thread;
+	pthread_create(&ddr_sender_thread, NULL, (void*) &ddrSender, (void*) p_mem);
+
 	return SUCCESS;
 }
 

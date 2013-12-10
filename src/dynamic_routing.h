@@ -18,6 +18,7 @@ struct real_connection{
 
 
 void helloSender(void *param);
+void ddrSender(void *param);
 void deathChecker(void *param);
 void reactToStateChange(int id, int new_state, struct shared_mem *mem);
 void sendNSU(int id, int new_state, struct shared_mem *mem);
